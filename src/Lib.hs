@@ -75,6 +75,7 @@ connectBot = notify $ do
     NS.connect sock (NS.addrAddress serverAddr)
     irchandle <- NS.socketToHandle sock ReadWriteMode
     hSetBuffering irchandle NoBuffering
+    hSetEncoding irchandle utf8
     return irchandle
   where
     notify = bracket_
