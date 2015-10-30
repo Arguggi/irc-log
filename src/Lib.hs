@@ -114,7 +114,7 @@ ircParser time = do
     nickN <- takeTill (== '!')
     skipWhile (/= ' ')
     _ <- char ' '
-    messageType <- string "PRIVMSG"
+    _ <- string "PRIVMSG"
     skipWhile (/= ':')
     _ <- char ':'
     mess <- takeText
