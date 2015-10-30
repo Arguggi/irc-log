@@ -112,6 +112,9 @@ ircParser :: UTCTime -> Parser PrivMsg
 ircParser time = do
     _ <- char ':'
     nickN <- takeTill (== '!')
+    skipWhile (/= ' ')
+    _ <- char ' '
+    messageType <- string "PRIVMSG"
     skipWhile (/= ':')
     _ <- char ':'
     mess <- takeText
