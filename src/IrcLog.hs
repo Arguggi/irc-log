@@ -25,7 +25,7 @@ main = bracket connectAll disconnectAll loop
 connectAll :: IO Bot
 connectAll = do
     ircHandle <- connectBot
-    dbConnection <- PG.connectPostgreSQL "host=localhost port=5432 user=irc dbname=irc"
+    dbConnection <- PG.connectPostgreSQL "port=5432 user=irc dbname=irc"
     return $ Bot ircHandle dbConnection
 
 disconnectAll :: Bot -> IO ()

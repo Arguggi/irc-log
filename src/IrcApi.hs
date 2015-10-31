@@ -21,14 +21,12 @@ import           Servant
 instance ToJSON PrivMsg
 
 type UserAPI = "log" :> Get '[JSON] [PrivMsg]
-    :<|> Raw
 
 userAPI :: Proxy UserAPI
 userAPI = Proxy
 
 server :: PG.Connection -> Server UserAPI
 server conn = liftIO (queryLog conn)
-    :<|> serveDirectory "elm/output/"
 
 app :: PG.Connection -> Application
 app conn  = serve userAPI $ IrcApi.server conn
@@ -39,4 +37,4 @@ queryLog conn = PG.query_ conn "SELECT nick, utctime, message FROM log"
 main :: IO ()
 main = do
     dbConnection <- PG.connectPostgreSQL "host=localhost port=5432 user=irc dbname=irc"
-    W.run 8081 $ app dbConnection
+    W.run 8645  $ app dbConnection
