@@ -20,7 +20,7 @@ import           Servant
 
 instance ToJSON PrivMsg
 
-type UserAPI = "log" :> Get '[JSON] [PrivMsg]
+type UserAPI = "api" :> "log" :> Get '[JSON] [PrivMsg]
 
 userAPI :: Proxy UserAPI
 userAPI = Proxy
