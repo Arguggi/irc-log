@@ -8,3 +8,15 @@ a database called irc. You can find a dump in `db/`
 - A bot that connects to an irc channel and saves every message in postgres
 - A servant api
 - An elm frontend that queries the api and displays the data
+
+## Todo
+
+- Better timestamps
+- Better table css
+- Colors in log?
+- Better DB table structure?
+- D3 graphs?
+
+## Pull requests
+
+Pull requests are always welcome
