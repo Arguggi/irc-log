@@ -63,7 +63,7 @@ message = Json.Decode.object3 Message
     ("timestamp" := Json.Decode.string)
 
 get : Task Http.Error (List Message)
-get = Http.get (Json.Decode.list message) "http://localhost:8081/log"
+get = Http.get (Json.Decode.list message) "/api/log/"
 
 port runner : Task Http.Error ()
 port runner = get `andThen` (SetMessages >> Signal.send actions.address)
