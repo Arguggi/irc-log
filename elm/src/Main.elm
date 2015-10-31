@@ -44,7 +44,7 @@ view model =
                          ]
   in
     div [class "container"]
-    [ table [class "table table-striped table-bordered"]
+    [ table [class "logtable"]
       [ thead [] [tr [] (List.map th' ["Nickname", "Timestamp", "Message"])]
       , tbody [] (List.map tr' model)
       ]

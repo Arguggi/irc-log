@@ -18,4 +18,5 @@ cabal.sandbox.config
 
 # Elm
 elm-stuff
-elm/output/
+# No need to add the js created with elm
+elm/output/elm.js

@@ -1,0 +1,9 @@
+.container {
+    margin: auto;
+    width: 2000px;
+}
+
+.logtable tbody th {
+   color: red;
+    padding-bottom: 10px;
+}
