@@ -36,5 +36,5 @@ queryLog conn = PG.query_ conn "SELECT nick, utctime, message FROM log"
 
 main :: IO ()
 main = do
-    dbConnection <- PG.connectPostgreSQL "host=localhost port=5432 user=irc dbname=irc"
+    dbConnection <- PG.connectPostgreSQL "port=5432 user=irc dbname=irc"
     W.run 8645  $ app dbConnection
