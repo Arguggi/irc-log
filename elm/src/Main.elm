@@ -38,15 +38,15 @@ actions = Signal.mailbox NoOp
 view : Model -> Html
 view model =
   let th' field = th [] [text field]
-      tr' message = tr [] [ td [] [text <| message.nickname]
-                         , td [] [text <| message.timestamp]
+      tr' message = tr [class "logrow"] [ td [] [text <| message.timestamp]
+                         , td [] [text <| message.nickname]
                          , td [] [text <| message.message]
                          ]
   in
     div [class "container"]
     [ table [class "logtable"]
-      [ thead [] [tr [] (List.map th' ["Nickname", "Timestamp", "Message"])]
-      , tbody [] (List.map tr' model)
+      [ thead [class "loghead"] [tr [] (List.map th' ["Timestamp (UTC)", "Nickname", "Message"])]
+      , tbody [class "logbody"] (List.map tr' model)
       ]
     ]
 

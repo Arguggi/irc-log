@@ -1,4 +1,15 @@
 .container {
     margin: auto;
-    width: 2000px;
+}
+
+.logtable {
+    border-spacing: 8px;
+}
+
+tr:nth-child(even) {
+    background-color: #FFFFFF;
+}
+
+tr:nth-child(odd) {
+    background-color: #F8F8F8;
 }
