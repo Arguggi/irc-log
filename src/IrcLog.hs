@@ -33,7 +33,6 @@ disconnectAll x = do
     hClose . socket $ x
     PG.close . dbConn $ x
 
-
 -- Connect to the server and return the initial bot state
 connectBot :: IO Handle
 connectBot = notify $ do
@@ -66,9 +65,9 @@ listen h = forever $ do
     io (TIO.putStrLn s)
     time <- io getCurrentTime
     if ping s then pong s
-        else case parseOnly (ircParser time) s of
-            Left _ -> return ()
-            Right ircMessage -> saveDb ircMessage
+        else either ignore saveDb $ parseOnly (ircParser time) s
+    where
+        ignore _ = return ()
 
 ping :: T.Text -> Bool
 ping x = "PING :" `T.isPrefixOf` x
@@ -78,13 +77,9 @@ pong x = write "PONG" (':' `T.cons` T.drop 6 x)
 
 ircParser :: UTCTime -> Parser PrivMsg
 ircParser time = do
-    _ <- char ':'
-    nickN <- takeTill (== '!')
-    skipWhile (/= ' ')
-    _ <- char ' '
-    _ <- string "PRIVMSG"
-    skipWhile (/= ':')
-    _ <- char ':'
+    nickN <- char ':' *> takeTill (== '!')
+    skipWhile (/= ' ') <* string " PRIVMSG "
+    _ <- string chan <* skipWhile (/= ':') <* char ':'
     mess <- takeText
     return $ PrivMsg nickN time (T.init mess)
 

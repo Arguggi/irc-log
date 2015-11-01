@@ -18,7 +18,6 @@ server = "irc.freenode.org"
 
 chan, nick :: T.Text
 chan   = "#haskell.it"
---chan   = "#test-test"
 nick   = "argu-bot"
 
 port :: Int
