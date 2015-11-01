@@ -6,8 +6,11 @@ import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Reader
 import           Data.Attoparsec.Text
+import qualified Data.ByteString            as B
 import           Data.Int
 import qualified Data.Text                  as T
+import qualified Data.Text.Encoding         as TEnc
+import qualified Data.Text.Encoding.Error   as TErr
 import qualified Data.Text.IO               as TIO
 import           Data.Time
 import           Database.PostgreSQL.Simple as PG
@@ -42,7 +45,6 @@ connectBot = notify $ do
     NS.connect sock (NS.addrAddress serverAddr)
     irchandle <- NS.socketToHandle sock ReadWriteMode
     hSetBuffering irchandle NoBuffering
-    hSetEncoding irchandle utf8
     return irchandle
   where
     notify = bracket_
@@ -61,7 +63,7 @@ run = do
 -- Process each line from the server
 listen :: Handle -> Net Bot
 listen h = forever $ do
-    s <- io (TIO.hGetLine h)
+    s <- io $ liftM (TEnc.decodeUtf8With TErr.lenientDecode) (B.hGetLine h)
     io (TIO.putStrLn s)
     time <- io getCurrentTime
     if ping s then pong s
