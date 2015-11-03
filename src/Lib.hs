@@ -1,16 +1,15 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Lib where
 
 import           Control.Monad.Reader
+import           Data.Aeson
 import qualified Data.Text                          as T
 import           Data.Time
 import           Database.PostgreSQL.Simple         as PG
 import           Database.PostgreSQL.Simple.FromRow
 import           Database.PostgreSQL.Simple.ToField
 import           Database.PostgreSQL.Simple.ToRow
-import           GHC.Generics
 import           System.IO
 
 server :: String
@@ -34,10 +33,20 @@ data PrivMsg = PrivMsg
     { nickname  :: T.Text
     , timestamp :: UTCTime
     , message   :: T.Text
-    } deriving (Show, Generic)
+    } deriving (Show)
 
 instance FromRow PrivMsg where
     fromRow = PrivMsg <$> field <*> field <*> field
 
 instance ToRow PrivMsg where
   toRow (PrivMsg n t m) = [toField n, toField t, toField m]
+
+instance ToJSON PrivMsg where
+    toJSON (PrivMsg n t m) = object
+        [ "nickname" .= n
+        , "timestamp" .= utcToText t
+        , "message" .= m
+        ]
+
+utcToText :: UTCTime -> T.Text
+utcToText = T.pack . formatTime defaultTimeLocale "%F %T"
