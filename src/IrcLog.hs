@@ -8,11 +8,13 @@ import           Control.Monad.Reader
 import           Data.Attoparsec.Text
 import qualified Data.ByteString            as B
 import           Data.Int
+import           Data.Monoid
 import qualified Data.Text                  as T
 import qualified Data.Text.Encoding         as TEnc
 import qualified Data.Text.Encoding.Error   as TErr
 import qualified Data.Text.IO               as TIO
 import           Data.Time
+import           Data.String
 import           Database.PostgreSQL.Simple as PG
 import           Lib
 import qualified Network.Socket             as NS
@@ -95,16 +97,16 @@ saveDb x = do
     when (rows == 0) $ io $ print ("Message not added" :: T.Text)
     return ()
 
--- Send a privmsg to the current chan + server
-privmsg :: T.Text -> Net ()
-privmsg s = write "PRIVMSG" (chan `T.append` " :" `T.append` s)
-
 -- Send a message out to the server we're currently connected to
 write :: T.Text -> T.Text -> Net ()
 write s t = do
     h <- asks socket
-    io $ TIO.hPutStr h (s `T.append` " " `T.append` t `T.append` " " `T.append` "\r\n")
-    io $ TIO.putStrLn (s `T.append` " " `T.append` t)
+    io $ TIO.hPutStr h (s <-> t <> "\r\n")
+    io $ TIO.putStrLn (s <-> t)
+
+-- Append with extra space
+(<->) :: (Data.String.IsString m, Monoid m) => m -> m -> m
+a <-> b = a <> " " <> b
 
 -- Convenience.
 io :: IO a -> Net a
