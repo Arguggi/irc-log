@@ -11,9 +11,6 @@ a database called irc. You can find a dump in `db/`
 
 ## Todo
 
-- Better timestamps
-- Better table css
-- Fix crash on non UTF-8 irc messages
 - Colors in log?
 - Better DB table structure?
 - D3 graphs?
