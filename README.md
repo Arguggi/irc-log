@@ -3,6 +3,19 @@
 The bot needs a postgresql database listening on localhost:5432 with a irc user (no pass) and
 a database called irc. You can find a dump in `db/`
 
+## Build
+
+    $ git clone https://github.com/Arguggi/irc-log.git
+    $ cd irc-log
+    $ stack build
+
+Once if finishes you should find 2 executables in `.stack-work`:
+
+    - irc-api-exe : Servant api
+    - irc-log-exe : The irc bot
+
+If you want to use the irc logger remember to change the `nick` in `Lib.hs`.
+
 ## Components
 
 - A bot that connects to an irc channel and saves every message in postgres
