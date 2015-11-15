@@ -79,13 +79,18 @@ ping x = "PING :" `T.isPrefixOf` x
 pong :: T.Text -> Net ()
 pong x = write "PONG" (':' `T.cons` T.drop 6 x)
 
+-- Parse Irc message:
+-- :NICKNAME!~NICKNAME@HOST PRIVMSG #haskell.it :MESSAGE
 ircParser :: UTCTime -> Parser PrivMsg
-ircParser time = do
-    nickN <- char ':' *> takeTill (== '!')
-    skipWhile (/= ' ') <* string " PRIVMSG "
-    _ <- string chan <* skipWhile (/= ':') <* char ':'
-    mess <- takeText
-    return $ PrivMsg nickN time (T.init mess)
+ircParser time = PrivMsg <$> ircNickname <*> pure time <*> ircMessage
+    where
+        ircNickname = char ':' *> takeTill (== '!')
+        -- Only save PRIVMSGs
+        checkPriv = skipWhile (/= ' ') <* string " PRIVMSG "
+        -- sent to the channel we connect to (so this ignores PRIVMSGs to the bot)
+        skipChan = string chan <* skipWhile (/= ':') <* char ':'
+        ircMessage = checkPriv *> skipChan *> takeText
+
 
 insertMessage :: Connection -> PrivMsg -> IO Int64
 insertMessage conn = execute conn "INSERT INTO log (nick, utctime, message) values (?,?,?)"
