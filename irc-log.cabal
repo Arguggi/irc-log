@@ -3,7 +3,7 @@ version:             0.1.0.0
 synopsis:            Irc-log and utils
 description:         Please see README.md
 homepage:            http://github.com/Arguggi/irc-log
-license:             GPL3
+license:             GPL-3
 license-file:        LICENSE.md
 author:              Arguggi
 maintainer:          haskell@arguggi.co.uk
