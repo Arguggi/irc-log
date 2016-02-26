@@ -65,7 +65,7 @@ run = do
 -- Process each line from the server
 listen :: Handle -> Net Bot
 listen h = forever $ do
-    s <- io $ liftM (TEnc.decodeUtf8With TErr.lenientDecode) (B.hGetLine h)
+    s <- io $ fmap (TEnc.decodeUtf8With TErr.lenientDecode) (B.hGetLine h)
     io (TIO.putStrLn s)
     time <- io getCurrentTime
     if ping s then pong s
