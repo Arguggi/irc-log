@@ -22,6 +22,7 @@ library
                      , aeson
                      , attoparsec
                      , bytestring
+                     , ekg
                      , mtl
                      , network
                      , postgresql-simple

@@ -19,13 +19,17 @@ import           Database.PostgreSQL.Simple as PG
 import           Lib
 import qualified Network.Socket             as NS
 import           System.IO
+import           System.Remote.Monitoring
 import           Text.Printf
+
 
 -- Set up actions to run on start and end, and run the main loop
 main :: IO Bot
-main = bracket connectAll disconnectAll loop
-  where
-    loop = runReaderT run
+main = do
+    _ <- forkServer "localhost" 23453
+    bracket connectAll disconnectAll loop
+        where
+        loop = runReaderT run
 
 connectAll :: IO Bot
 connectAll = do
