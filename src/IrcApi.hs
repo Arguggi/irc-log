@@ -66,9 +66,6 @@ allMessagesBetween start end = proc () -> do
     O.restrict -< (timestamp O..>= O.pgUTCTime start) O..&& (timestamp O..<= O.pgUTCTime end)
     returnA -< (nickname, timestamp, mess)
 
-toOrder :: SqlPrivMsg a b (O.Column O.PGTimestamptz) d -> O.Column O.PGTimestamptz
-toOrder (SqlPrivMsg _ _ time _ ) = time
-
 -- | Tell ghc the type of the returned values
 runCodeQuery
     :: PG.Connection
