@@ -1,7 +1,7 @@
 # Haskell.it irc bot
 
-The bot needs a postgresql database listening on localhost:5432 with a irc user (no pass) and
-a database called irc. You can find a dump in `db/`
+The bot needs a `postgresql` database listening on `localhost:5432` with a `irc` user (no pass) and
+a database called `irc`. You can find a dump in `db/`
 
 ## Build
 
@@ -11,8 +11,8 @@ a database called irc. You can find a dump in `db/`
 
 Once if finishes you should find 2 executables in `.stack-work`:
 
-    - irc-api-exe : Servant api
-    - irc-log-exe : The irc bot
+    - irc-api: Servant api
+    - irc-log: The irc bot
 
 If you want to use the irc logger remember to change the `nick` in `Lib.hs`.
 
