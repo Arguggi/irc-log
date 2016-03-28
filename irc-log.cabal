@@ -25,6 +25,8 @@ library
                      , ekg
                      , mtl
                      , network
+                     , opaleye
+                     , product-profunctors
                      , postgresql-simple
                      , servant
                      , servant-server

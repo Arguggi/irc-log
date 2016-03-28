@@ -9,15 +9,16 @@ import           Data.Attoparsec.Text
 import qualified Data.ByteString            as B
 import           Data.Int
 import           Data.Monoid
+import           Data.String
 import qualified Data.Text                  as T
 import qualified Data.Text.Encoding         as TEnc
 import qualified Data.Text.Encoding.Error   as TErr
 import qualified Data.Text.IO               as TIO
 import           Data.Time
-import           Data.String
 import           Database.PostgreSQL.Simple as PG
 import           Lib
 import qualified Network.Socket             as NS
+import qualified Opaleye                    as O
 import           System.IO
 import           System.Remote.Monitoring
 import           Text.Printf
@@ -97,9 +98,12 @@ ircParser time = PrivMsg <$> ircNickname <*> pure time <*> ircMessage
         skipChan = string chan <* skipWhile (/= ':') <* char ':'
         ircMessage = checkPriv *> skipChan *> takeText
 
-
 insertMessage :: Connection -> PrivMsg -> IO Int64
-insertMessage conn = execute conn "INSERT INTO log (nick, utctime, message) values (?,?,?)"
+insertMessage conn (PrivMsg n t m) =
+    O.runInsert
+        conn
+        logTable
+        (SqlPrivMsg Nothing (O.pgStrictText n) (O.pgUTCTime t) (O.pgStrictText m))
 
 saveDb :: PrivMsg -> Net ()
 saveDb x = do

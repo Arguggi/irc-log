@@ -1,15 +1,21 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 module Lib where
 
 import           Control.Monad.Reader
 import           Data.Aeson
+import           Data.Profunctor.Product.TH         (makeAdaptorAndInstance)
 import qualified Data.Text                          as T
 import           Data.Time
-import           Database.PostgreSQL.Simple         as PG
+import qualified Database.PostgreSQL.Simple         as PG
 import           Database.PostgreSQL.Simple.FromRow
 import           Database.PostgreSQL.Simple.ToField
 import           Database.PostgreSQL.Simple.ToRow
+import qualified Opaleye                            as O
 import           System.IO
 
 server :: String
@@ -52,3 +58,33 @@ instance ToJSON PrivMsg where
 
 utcToText :: UTCTime -> T.Text
 utcToText = T.pack . formatTime defaultTimeLocale "%F %T"
+
+data SqlPrivMsg a b c d
+    = SqlPrivMsg
+        { messageId   :: a
+        , messageNick :: b
+        , messageTime :: c
+        , messageText :: d
+        }
+
+$(makeAdaptorAndInstance "pSqlPrivMsg" ''SqlPrivMsg)
+
+type SqlPrivMsgWrite
+    = SqlPrivMsg
+          (Maybe (O.Column O.PGInt4))
+          (O.Column O.PGText)
+          (O.Column O.PGTimestamptz)
+          (O.Column O.PGText)
+
+type SqlPrivMsgRead
+    = SqlPrivMsg
+          (O.Column O.PGInt4)
+          (O.Column O.PGText)
+          (O.Column O.PGTimestamptz)
+          (O.Column O.PGText)
+
+logTable :: O.Table SqlPrivMsgWrite SqlPrivMsgRead
+logTable = O.Table "log" (pSqlPrivMsg SqlPrivMsg { messageId = O.optional "id"
+                                                 , messageNick = O.required "nick"
+                                                 , messageTime = O.required "utctime"
+                                                 , messageText = O.required "message" })
