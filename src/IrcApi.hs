@@ -5,26 +5,30 @@
 
 module IrcApi where
 
+import           Control.Arrow                      (returnA)
 import           Control.Monad.IO.Class
-import           Data.Aeson
-import qualified Data.ByteString            as B
 import           Data.Maybe
 import qualified Data.Text                  as T
-import qualified Data.Text.Encoding         as TE
 import           Data.Time
 import qualified Database.PostgreSQL.Simple as PG
 import           GHC.Generics
 import           Lib
 import           Network.Wai
 import qualified Network.Wai.Handler.Warp   as W
+import qualified Opaleye                    as O
 import           Servant
-
 
 instance FromText UTCTime where
     fromText = parseTimeM False defaultTimeLocale "%F" . T.unpack
 
-type UserAPI = "api" :> "log" :> QueryParam "from" UTCTime :> QueryParam "to" UTCTime :> Get '[JSON] [PrivMsg]
-    :<|> Raw
+type UserAPI
+    =   "api"
+        :> "log"
+        :> QueryParam "from" UTCTime
+        :> QueryParam "to" UTCTime
+        :> Get '[JSON] [PrivMsg]
+    :<|>
+        Raw
 
 userAPI :: Proxy UserAPI
 userAPI = Proxy

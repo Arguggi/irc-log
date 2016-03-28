@@ -24,22 +24,24 @@ port = 6667
 
 -- The 'Net' monad, a wrapper over IO, carrying the bot's immutable state.
 type Net = ReaderT Bot IO
-data Bot = Bot
-    { socket :: Handle
-    , dbConn :: PG.Connection
-    }
+data Bot
+    = Bot
+        { socket :: Handle
+        , dbConn :: PG.Connection
+        }
 
-data PrivMsg = PrivMsg
-    { nickname  :: T.Text
-    , timestamp :: UTCTime
-    , message   :: T.Text
-    } deriving (Show)
+data PrivMsg
+    = PrivMsg
+        { nickname  :: T.Text
+        , timestamp :: UTCTime
+        , message   :: T.Text
+        } deriving (Show)
 
 instance FromRow PrivMsg where
     fromRow = PrivMsg <$> field <*> field <*> field
 
 instance ToRow PrivMsg where
-  toRow (PrivMsg n t m) = [toField n, toField t, toField m]
+    toRow (PrivMsg n t m) = [toField n, toField t, toField m]
 
 instance ToJSON PrivMsg where
     toJSON (PrivMsg n t m) = object

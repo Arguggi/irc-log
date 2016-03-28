@@ -39,8 +39,10 @@ connectAll = do
 
 disconnectAll :: Bot -> IO ()
 disconnectAll x = do
+    putStrLn "Closing connection to db and irc network handle"
     hClose . socket $ x
     PG.close . dbConn $ x
+    putStrLn "Done"
 
 -- Connect to the server and return the initial bot state
 connectBot :: IO Handle
@@ -52,10 +54,10 @@ connectBot = notify $ do
     irchandle <- NS.socketToHandle sock ReadWriteMode
     hSetBuffering irchandle NoBuffering
     return irchandle
-  where
-    notify = bracket_
-        (printf "Connecting to %s ... " server >> hFlush stdout)
-        (putStrLn "done.")
+    where
+        notify = bracket_
+            (printf "Connecting to %s ... " server >> hFlush stdout)
+            (putStrLn "done.")
 
 -- We're in the Net monad now, so we've connected successfully
 -- Join a channel, and start processing commands
