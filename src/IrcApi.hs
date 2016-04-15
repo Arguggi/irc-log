@@ -43,13 +43,21 @@ app conn  = serve userAPI $ IrcApi.server conn
 
 queryLog :: PG.Connection -> Maybe UTCTime -> Maybe UTCTime -> IO [PrivMsg]
 queryLog conn from to = do
-    UTCTime day time <- getCurrentTime
+    currentTime <- getCurrentTime
     -- get last day by default
-    let yesterday = UTCTime (addDays (-1) day) time
+    let yesterday = addDaysUTC (-1) currentTime
         start = fromMaybe yesterday from
-        end = fromMaybe (UTCTime day time) to
-    messages <- runCodeQuery conn (allMessagesBetween start end)
+        end = fromMaybe currentTime to
+        -- Only get max 10 days of logs at once
+        actualEnd = min tenDaysAfter end
+                    where tenDaysAfter = addDaysUTC 10 start
+    print actualEnd
+    messages <- runCodeQuery conn (allMessagesBetween start actualEnd)
     return $ fmap toPrivMsg messages
+
+addDaysUTC :: Integer -> UTCTime -> UTCTime
+addDaysUTC n (UTCTime day time) = UTCTime (addDays n day) time
+
 
 toPrivMsg :: (T.Text, UTCTime, T.Text) -> PrivMsg
 toPrivMsg (a, b, c) = PrivMsg a b c
