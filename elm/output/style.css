@@ -1,11 +1,3 @@
-.container {
-    margin: auto;
-}
-
-.logtable {
-    border-spacing: 8px;
-}
-
 tr:nth-child(even) {
     background-color: #FFFFFF;
 }
