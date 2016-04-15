@@ -51,7 +51,6 @@ queryLog conn from to = do
         -- Only get max 10 days of logs at once
         actualEnd = min tenDaysAfter end
                     where tenDaysAfter = addDaysUTC 10 start
-    print actualEnd
     messages <- runCodeQuery conn (allMessagesBetween start actualEnd)
     return $ fmap toPrivMsg messages
 
