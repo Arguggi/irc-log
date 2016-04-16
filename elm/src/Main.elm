@@ -14,11 +14,18 @@ import Mouse
 
 -- MODEL
 
+type alias Response =
+  { status : Int
+  , fromDate : String
+  , toDate : String
+  , messages : List Message
+  }
+
 type alias Message =
-    { nickname : String
-    , message : String
-    , timestamp : String
-    }
+  { nickname : String
+  , message : String
+  , timestamp : String
+  }
 
 type DateField = From | To
 
@@ -26,36 +33,45 @@ type alias Model =
   { messages : List Message
   , fromDate : String
   , toDate   : String
+  , fromDateShow : String
+  , toDateShow   : String
   , loadingMessage  : String
   }
 
 
 init : (Model, Effects Action)
-init = (Model [] "" "" "", getData "" "")
+init = (Model [] "" "" "" "" "", getData "" "")
 
 -- UPDATE
 
 type Action =
-     NoOp
-    | SetMessages (List Message)
+      NoOp
+    | SetMessages (List Message) String String
+    | SetStatus String
+    | SetDates String String
     | UpdateDate String DateField
 
---update : Action -> Model -> (Model, Effects Action)
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
-    NoOp                     -> (model, Effects.none)
-    SetMessages newMessages  -> ({ model | messages = newMessages, loadingMessage = "Messages Loaded" } , Effects.none)
-    UpdateDate date From     -> dateFormChange model date From
-    UpdateDate date To       -> dateFormChange model date To
+    NoOp                  -> (model, Effects.none)
+    SetMessages newMessages fromDate toDate -> ({ model | messages = newMessages
+                                                        , loadingMessage = "Messages Loaded"
+                                                        , fromDateShow = fromDate
+                                                        , toDateShow = toDate }, Effects.none)
+    SetStatus status      -> ({ model | loadingMessage = status }, Effects.none)
+    SetDates from to      -> ({ model | fromDateShow = from, toDateShow = to}, Effects.none)
+    UpdateDate date field -> dateFormChange model date field
 
 dateFormChange : Model -> String -> DateField -> (Model, Effects Action)
 dateFormChange model newDate field =
   let updatedModel = updateDate model newDate field
-      loadingModel = { updatedModel | loadingMessage = "Loading messages" }
+      loadingModel = { updatedModel | loadingMessage = "Loading messages"
+                                    , fromDateShow = ""
+                                    , toDateShow = ""}
       invalidDateModel = { updatedModel | loadingMessage = "Invalid Date" }
   in if validDate newDate
-       then (loadingModel , getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate))
+       then (loadingModel , (getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate)))
        else (invalidDateModel, Effects.none)
 
 safeDate : String -> String
@@ -74,7 +90,6 @@ validDate x = case String.split "-" x of
   [] -> True
   _ -> False
 
-
 view : Signal.Address Action -> Model -> Html
 view address model =
   let allMessages = model.messages
@@ -83,6 +98,7 @@ view address model =
                        , td [] [text <| message.nickname]
                        , td [] [text <| message.message]
                        ]
+      statusMess txt = p [statusStyle] [text txt]
   in
     div [class "container", containerStyle]
     [ div [class "date-container", dateContainerStyle]
@@ -105,7 +121,7 @@ view address model =
           []
         ]
       ]
-      , div [statusStyle] [h3 [] [ text (model.loadingMessage)]]
+      , div [headerStyle] (List.map statusMess [model.loadingMessage, model.fromDateShow, model.toDateShow])
       , table [class "logtable", logTableStyle]
         [ thead [class "loghead"] [tr [] (List.map th' ["Timestamp (UTC)", "Nickname", "Message"])]
         , tbody [class "logbody"] (List.map tr' allMessages)
@@ -128,7 +144,7 @@ dateStyle : Attribute
 dateStyle = style [ ("padding", "4px") ]
 
 statusStyle : Attribute
-statusStyle = style [ ("padding", "8px") ]
+statusStyle = style [("margin", "4px 0 4px 0")]
 
 app : StartApp.App Model
 app =
@@ -142,14 +158,21 @@ app =
 main : Signal Html
 main = app.html
 
+logResponse : Json.Decode.Decoder Response
+logResponse = Json.Decode.object4 Response
+  ("status" := Json.Decode.int)
+  ("fromDate" := Json.Decode.string)
+  ("toDate" := Json.Decode.string)
+  ("messages" := Json.Decode.list message)
+
 message : Json.Decode.Decoder Message
 message = Json.Decode.object3 Message
   ("nickname" := Json.Decode.string)
   ("message" := Json.Decode.string)
   ("timestamp" := Json.Decode.string)
 
-getTask : String -> String -> Task Http.Error (List Message)
-getTask from to = Http.get (Json.Decode.list message) (Http.url "/api/log/" [("from", from), ("to", to)])
+getTask : String -> String -> Task Http.Error Response
+getTask from to = Http.get logResponse (Http.url "/api/log/" [("from", from), ("to", to)])
 
 port runner : Signal (Task Never ())
 port runner = app.tasks
@@ -159,11 +182,24 @@ getData from to = getTask from to
   |> Task.toMaybe
   |> Task.map toAction
   |> Effects.task
---
-toAction : Maybe (List Message) -> Action
-toAction list = case list of
-  Nothing -> NoOp
-  (Just mess) -> SetMessages mess
+
+toAction : Maybe Response -> Action
+toAction list =
+  let failedRequest = SetStatus "Request failed"
+  in case list of
+    Nothing -> failedRequest
+    (Just response) -> case response.status of
+      0 -> SetMessages response.messages response.fromDate response.toDate
+      _ -> failedRequest
+
+headerStyle : Attribute
+headerStyle =
+  style
+  [ ("display", "flex")
+  , ("flex-direction", "column")
+  , ("justify-content", "center")
+  , ("align-items", "center")
+  ]
 
 myStyle : Attribute
 myStyle =

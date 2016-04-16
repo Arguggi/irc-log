@@ -43,6 +43,14 @@ data PrivMsg
         , message   :: T.Text
         } deriving (Show)
 
+data LogResponse
+    = LogResponse
+        { status :: Int
+        , fromDate :: UTCTime
+        , toDate :: UTCTime
+        , messages :: [PrivMsg]
+        }
+
 instance FromRow PrivMsg where
     fromRow = PrivMsg <$> field <*> field <*> field
 
@@ -54,6 +62,14 @@ instance ToJSON PrivMsg where
         [ "nickname" .= n
         , "timestamp" .= utcToText t
         , "message" .= m
+        ]
+
+instance ToJSON LogResponse where
+    toJSON (LogResponse s f t m) = object
+        [ "status" .= s
+        , "fromDate" .= utcToText f
+        , "toDate" .= utcToText t
+        , "messages" .= toJSON m
         ]
 
 utcToText :: UTCTime -> T.Text

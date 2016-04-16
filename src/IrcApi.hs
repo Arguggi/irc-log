@@ -27,7 +27,7 @@ type UserAPI
         :> "log"
         :> QueryParam "from" UTCTime
         :> QueryParam "to" UTCTime
-        :> Get '[JSON] [PrivMsg]
+        :> Get '[JSON] LogResponse
     :<|>
         Raw
 
@@ -41,13 +41,14 @@ server conn = (\x y -> liftIO $ queryLog conn x y)
 app :: PG.Connection -> Application
 app conn  = serve userAPI $ IrcApi.server conn
 
-queryLog :: PG.Connection -> Maybe UTCTime -> Maybe UTCTime -> IO [PrivMsg]
+queryLog :: PG.Connection -> Maybe UTCTime -> Maybe UTCTime -> IO LogResponse
 queryLog conn from to = do
     currentTime <- getCurrentTime
     -- get last day by default
     let (start, end) = dateRange currentTime from to
-    messages <- runCodeQuery conn (allMessagesBetween start end)
-    return $ fmap toPrivMsg messages
+    sqlMessages <- runCodeQuery conn (allMessagesBetween start end)
+    let messages = fmap toPrivMsg sqlMessages
+    return $ LogResponse 0 start end messages
 
 maxDays :: Int
 maxDays = 3
