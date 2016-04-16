@@ -26,11 +26,12 @@ type alias Model =
   { messages : List Message
   , fromDate : String
   , toDate   : String
+  , loadingMessage  : String
   }
 
 
 init : (Model, Effects Action)
-init = (Model [] "" "", getData "" "")
+init = (Model [] "" "" "", getData "" "")
 
 -- UPDATE
 
@@ -44,13 +45,27 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp                     -> (model, Effects.none)
-    SetMessages newMessages  -> ({ model | messages = newMessages } , Effects.none)
-    UpdateDate date From     -> ({ model | fromDate = date }, if validDate date then
-                                                                getData date model.toDate
-                                                              else Effects.none)
-    UpdateDate date To       -> ({ model | toDate = date },   if validDate date then
-                                                                getData model.fromDate date
-                                                              else Effects.none)
+    SetMessages newMessages  -> ({ model | messages = newMessages, loadingMessage = "Messages Loaded" } , Effects.none)
+    UpdateDate date From     -> dateFormChange model date From
+    UpdateDate date To       -> dateFormChange model date To
+
+dateFormChange : Model -> String -> DateField -> (Model, Effects Action)
+dateFormChange model newDate field =
+  let updatedModel = updateDate model newDate field
+      loadingModel = { updatedModel | loadingMessage = "Loading messages" }
+      invalidDateModel = { updatedModel | loadingMessage = "Invalid Date" }
+  in if validDate newDate
+       then (updatedModel, getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate))
+       else (invalidDateModel, Effects.none)
+
+safeDate : String -> String
+safeDate date = if validDate date then date else ""
+
+updateDate : Model -> String -> DateField -> Model
+updateDate model date field =
+  case field of
+    From -> { model | fromDate = date }
+    To   -> { model | toDate   = date }
 
 -- This will do for now, the api checks for invalid dates anyway
 validDate : String -> Bool
@@ -90,6 +105,7 @@ view address model =
           []
         ]
       ]
+      , div [statusStyle] [h3 [] [ text (model.loadingMessage)]]
       , table [class "logtable", logTableStyle]
         [ thead [class "loghead"] [tr [] (List.map th' ["Timestamp (UTC)", "Nickname", "Message"])]
         , tbody [class "logbody"] (List.map tr' allMessages)
@@ -110,6 +126,9 @@ dateContainerStyle = style [ ("display", "flex")
 
 dateStyle : Attribute
 dateStyle = style [ ("padding", "4px") ]
+
+statusStyle : Attribute
+statusStyle = style [ ("padding", "8px") ]
 
 app : StartApp.App Model
 app =
