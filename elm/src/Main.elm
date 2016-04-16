@@ -55,7 +55,7 @@ dateFormChange model newDate field =
       loadingModel = { updatedModel | loadingMessage = "Loading messages" }
       invalidDateModel = { updatedModel | loadingMessage = "Invalid Date" }
   in if validDate newDate
-       then (updatedModel, getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate))
+       then (loadingModel , getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate))
        else (invalidDateModel, Effects.none)
 
 safeDate : String -> String
