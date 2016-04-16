@@ -129,10 +129,12 @@ view address model =
     ]
 
 logTableStyle : Attribute
-logTableStyle = style [ ("border-spacing", "8px") ]
+logTableStyle = style [ ("border-spacing", "8px")
+                      , ("align-self", "center") ]
 
 containerStyle : Attribute
-containerStyle = style [ ("margin", "auto") ]
+containerStyle = style [ ("display", "flex")
+                       , ("flex-direction", "column") ]
 
 dateContainerStyle : Attribute
 dateContainerStyle = style [ ("display", "flex")
