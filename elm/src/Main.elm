@@ -1,7 +1,6 @@
 module Main where
 
 import Effects exposing (..)
-import Debug
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (on, targetValue)
@@ -10,7 +9,6 @@ import Json.Decode exposing ((:=))
 import Task exposing (Task, andThen)
 import StartApp
 import String
-import Mouse
 
 -- MODEL
 
@@ -44,12 +42,12 @@ init = (Model [] "" "" "" "" "", getData "" "")
 
 -- UPDATE
 
-type Action =
-      NoOp
-    | SetMessages (List Message) String String
-    | SetStatus String
-    | SetDates String String
-    | UpdateDate String DateField
+type Action
+  = NoOp
+  | SetMessages (List Message) String String
+  | SetStatus String
+  | SetDates String String
+  | UpdateDate String DateField
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -70,9 +68,10 @@ dateFormChange model newDate field =
                                     , fromDateShow = ""
                                     , toDateShow = ""}
       invalidDateModel = { updatedModel | loadingMessage = "Invalid Date" }
-  in if validDate newDate
-       then (loadingModel , (getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate)))
-       else (invalidDateModel, Effects.none)
+  in
+    if validDate newDate
+      then (loadingModel , (getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate)))
+      else (invalidDateModel, Effects.none)
 
 safeDate : String -> String
 safeDate date = if validDate date then date else ""
@@ -85,10 +84,11 @@ updateDate model date field =
 
 -- This will do for now, the api checks for invalid dates anyway
 validDate : String -> Bool
-validDate x = case String.split "-" x of
-  [year, month, day] -> (String.length year == 4) && (String.length month == 2) && (String.length day == 2)
-  [] -> True
-  _ -> False
+validDate x =
+  case String.split "-" x of
+    [year, month, day] -> (String.length year == 4) && (String.length month == 2) && (String.length day == 2)
+    [] -> True
+    _ -> False
 
 view : Signal.Address Action -> Model -> Html
 view address model =
@@ -129,24 +129,38 @@ view address model =
     ]
 
 logTableStyle : Attribute
-logTableStyle = style [ ("border-spacing", "8px")
-                      , ("align-self", "center") ]
+logTableStyle =
+  style
+    [ ("border-spacing", "8px")
+    , ("align-self", "center")
+    ]
 
 containerStyle : Attribute
-containerStyle = style [ ("display", "flex")
-                       , ("flex-direction", "column") ]
+containerStyle =
+  style
+    [ ("display", "flex")
+    , ("flex-direction", "column")
+    ]
 
 dateContainerStyle : Attribute
-dateContainerStyle = style [ ("display", "flex")
-                           , ("flex-wrap", "wrap")
-                           , ("justify-content", "space-around")
-                           ]
+dateContainerStyle =
+  style
+    [ ("display", "flex")
+    , ("flex-wrap", "wrap")
+    , ("justify-content", "space-around")
+    ]
 
 dateStyle : Attribute
-dateStyle = style [ ("padding", "4px") ]
+dateStyle =
+  style
+    [ ("padding", "4px")
+    ]
 
 statusStyle : Attribute
-statusStyle = style [("margin", "4px 0 4px 0")]
+statusStyle =
+  style
+    [("margin", "4px 0 4px 0")
+    ]
 
 app : StartApp.App Model
 app =
@@ -161,17 +175,19 @@ main : Signal Html
 main = app.html
 
 logResponse : Json.Decode.Decoder Response
-logResponse = Json.Decode.object4 Response
-  ("status" := Json.Decode.int)
-  ("fromDate" := Json.Decode.string)
-  ("toDate" := Json.Decode.string)
-  ("messages" := Json.Decode.list message)
+logResponse =
+  Json.Decode.object4 Response
+    ("status" := Json.Decode.int)
+    ("fromDate" := Json.Decode.string)
+    ("toDate" := Json.Decode.string)
+    ("messages" := Json.Decode.list message)
 
 message : Json.Decode.Decoder Message
-message = Json.Decode.object3 Message
-  ("nickname" := Json.Decode.string)
-  ("message" := Json.Decode.string)
-  ("timestamp" := Json.Decode.string)
+message =
+  Json.Decode.object3 Message
+    ("nickname" := Json.Decode.string)
+    ("message" := Json.Decode.string)
+    ("timestamp" := Json.Decode.string)
 
 getTask : String -> String -> Task Http.Error Response
 getTask from to = Http.get logResponse (Http.url "/api/log/" [("from", from), ("to", to)])
@@ -188,20 +204,21 @@ getData from to = getTask from to
 toAction : Maybe Response -> Action
 toAction list =
   let failedRequest = SetStatus "Request failed"
-  in case list of
-    Nothing -> failedRequest
-    (Just response) -> case response.status of
-      0 -> SetMessages response.messages response.fromDate response.toDate
-      _ -> failedRequest
+  in
+    case list of
+      Nothing -> failedRequest
+      (Just response) -> case response.status of
+        0 -> SetMessages response.messages response.fromDate response.toDate
+        _ -> failedRequest
 
 headerStyle : Attribute
 headerStyle =
   style
-  [ ("display", "flex")
-  , ("flex-direction", "column")
-  , ("justify-content", "center")
-  , ("align-items", "center")
-  ]
+    [ ("display", "flex")
+    , ("flex-direction", "column")
+    , ("justify-content", "center")
+    , ("align-items", "center")
+    ]
 
 myStyle : Attribute
 myStyle =
