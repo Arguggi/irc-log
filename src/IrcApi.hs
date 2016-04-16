@@ -45,19 +45,27 @@ queryLog :: PG.Connection -> Maybe UTCTime -> Maybe UTCTime -> IO [PrivMsg]
 queryLog conn from to = do
     currentTime <- getCurrentTime
     -- get last day by default
-    let yesterday = addDaysUTC (-1) currentTime
-        start = fromMaybe yesterday from
-        end = fromMaybe currentTime to
-        -- Only get max 10 days of logs at once
-        actualEnd = min tenDaysAfter end
-                    where tenDaysAfter = addDaysUTC 3 start
-    messages <- runCodeQuery conn (allMessagesBetween start actualEnd)
+    let (start, end) = dateRange currentTime from to
+    messages <- runCodeQuery conn (allMessagesBetween start end)
     return $ fmap toPrivMsg messages
+
+maxDays :: Int
+maxDays = 3
+
+-- | * Maximum date range should be 'maxDays' days
+--   * If no to or from date is present we want (now - 1, now): just the last day.
+--   * If a start date is present we want (start, min end (start + 3).
+--   * If only an end date is present we want (end - 3, end).
+dateRange :: UTCTime -> Maybe UTCTime -> Maybe UTCTime -> (UTCTime, UTCTime)
+dateRange now Nothing     Nothing   = (addDaysUTC (-1) now, now)
+dateRange _   Nothing     (Just to) = (addDaysUTC (-3) to, to)
+dateRange _   (Just from) Nothing   = (from, addDaysUTC 3 from)
+dateRange _   (Just from) (Just to) = (from, min (addDaysUTC 3 from) to)
 
 addDaysUTC :: Integer -> UTCTime -> UTCTime
 addDaysUTC n (UTCTime day time) = UTCTime (addDays n day) time
 
-
+-- | Convert data received from 'allMessagesBetween' and 'PrivMsg'
 toPrivMsg :: (T.Text, UTCTime, T.Text) -> PrivMsg
 toPrivMsg (a, b, c) = PrivMsg a b c
 
