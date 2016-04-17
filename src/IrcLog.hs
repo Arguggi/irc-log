@@ -65,7 +65,7 @@ connectBot = notify $ do
 run :: Net Bot
 run = do
     write "NICK" nick
-    write "USER" (nick `mappend` " 0 * :tutorial bot")
+    write "USER" (nick `mappend` " 0 * :argu-bot")
     write "JOIN" chan
     asks socket >>= listen
 
