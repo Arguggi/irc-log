@@ -87,7 +87,7 @@ validDate : String -> Bool
 validDate x =
   case String.split "-" x of
     [year, month, day] -> (String.length year == 4) && (String.length month == 2) && (String.length day == 2)
-    [] -> True
+    [""] -> True
     _ -> False
 
 view : Signal.Address Action -> Model -> Html
