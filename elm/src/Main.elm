@@ -66,7 +66,8 @@ dateFormChange model newDate field =
   let updatedModel = updateDate model newDate field
       loadingModel = { updatedModel | loadingMessage = "Loading messages"
                                     , fromDateShow = ""
-                                    , toDateShow = ""}
+                                    , toDateShow = ""
+                                    , messages = []}
       invalidDateModel = { updatedModel | loadingMessage = "Invalid Date" }
   in
     if validDate newDate
@@ -102,26 +103,30 @@ view address model =
   in
     div [class "container", containerStyle]
     [ div [class "date-container", dateContainerStyle]
-      [ div [class "date", dateStyle]
+      [ div [dateStyle]
         [ input
           [ placeholder "From: YYYY-MM-DD"
           , value (model.fromDate)
           , on "input" targetValue (\x -> Signal.message address (UpdateDate x From))
-          , myStyle
+          , inputStyle model.fromDate
           ]
           []
         ]
-      , div [class "date", dateStyle]
+      , div [dateStyle]
         [ input
           [ placeholder "To: YYYY-MM-DD"
           , value (model.toDate)
           , on "input" targetValue (\x -> Signal.message address (UpdateDate x To))
-          , myStyle
+          , inputStyle model.toDate
           ]
           []
         ]
       ]
-      , div [headerStyle] (List.map statusMess [model.loadingMessage, model.fromDateShow, model.toDateShow])
+      , div [headerStyle]
+        (List.map statusMess
+          [ model.loadingMessage
+          , model.fromDateShow
+          , model.toDateShow])
       , table [class "logtable", logTableStyle]
         [ thead [class "loghead"] [tr [] (List.map th' ["Timestamp (UTC)", "Nickname", "Message"])]
         , tbody [class "logbody"] (List.map tr' allMessages)
@@ -159,7 +164,7 @@ dateStyle =
 statusStyle : Attribute
 statusStyle =
   style
-    [("margin", "4px 0 4px 0")
+    [ ("margin", "4px 0 4px 0")
     ]
 
 app : StartApp.App Model
@@ -203,13 +208,14 @@ getData from to = getTask from to
 
 toAction : Maybe Response -> Action
 toAction list =
-  let failedRequest = SetStatus "Request failed"
+  let
+    requestFailed = SetStatus "Request failed"
   in
     case list of
-      Nothing -> failedRequest
+      Nothing -> requestFailed
       (Just response) -> case response.status of
         0 -> SetMessages response.messages response.fromDate response.toDate
-        _ -> failedRequest
+        _ -> requestFailed
 
 headerStyle : Attribute
 headerStyle =
@@ -220,12 +226,23 @@ headerStyle =
     , ("align-items", "center")
     ]
 
-myStyle : Attribute
-myStyle =
-  style
-    [ ("width", "100%")
-    , ("height", "40px")
-    , ("padding", "10px 0")
-    , ("font-size", "2em")
-    , ("text-align", "center")
-    ]
+inputStyle : String -> Attribute
+inputStyle date =
+  let
+    boxColor =
+      if validDate date
+         then lightGreen
+         else lightRed
+  in
+    style
+      [ ("padding", "10px 0")
+      , ("font-size", "1.5em")
+      , ("text-align", "center")
+      , ("box-shadow", "0 0 6px " ++ boxColor)
+      ]
+
+lightGreen : String
+lightGreen = "#79CF6D"
+
+lightRed : String
+lightRed = "#CF6D6D"
