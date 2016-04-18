@@ -39,7 +39,7 @@ type alias Model =
 
 
 init : (Model, Effects Action)
-init = (Model [] "" "" "" "" "", getData "" "")
+init = (Model [] "" "" "" "" "Loading", getData "" "")
 
 -- UPDATE
 
