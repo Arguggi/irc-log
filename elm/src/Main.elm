@@ -149,6 +149,8 @@ containerStyle =
   style
     [ ("display", "flex")
     , ("flex-direction", "column")
+    , ("max-width", "1000px")
+    , ("margin" , "auto")
     ]
 
 dateContainerStyle : Attribute
@@ -157,6 +159,7 @@ dateContainerStyle =
     [ ("display", "flex")
     , ("flex-wrap", "wrap")
     , ("justify-content", "space-around")
+    , ("align-items", "center")
     ]
 
 dateStyle : Attribute
@@ -226,7 +229,6 @@ headerStyle =
   style
     [ ("display", "flex")
     , ("flex-direction", "column")
-    , ("justify-content", "center")
     , ("align-items", "center")
     ]
 
