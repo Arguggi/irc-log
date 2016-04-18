@@ -1,5 +1,6 @@
 module Main where
 
+import Dates exposing (..)
 import Effects exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -8,7 +9,7 @@ import Http
 import Json.Decode exposing ((:=))
 import Task exposing (Task, andThen)
 import StartApp
-import String
+import Styles exposing (..)
 
 -- MODEL
 
@@ -75,25 +76,11 @@ dateFormChange model field newDate =
       then (loadingModel , (getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate)))
       else (invalidDateModel, Effects.none)
 
-safeDate : String -> String
-safeDate date = if validDate date then date else ""
-
 updateDate : Model -> String -> DateField -> Model
 updateDate model date field =
   case field of
     From -> { model | fromDate = date }
     To   -> { model | toDate   = date }
-
--- This will do for now, the api checks for invalid dates anyway
-validDate : String -> Bool
-validDate x =
-  case String.split "-" x of
-    [year, month, day] ->
-      (String.length year == 4)
-      && (String.length month == 2)
-      && (String.length day == 2)
-    [""] -> True
-    _ -> False
 
 view : Signal.Address Action -> Model -> Html
 view address model =
@@ -137,43 +124,6 @@ view address model =
         ]
     ]
 
-logTableStyle : Attribute
-logTableStyle =
-  style
-    [ ("border-spacing", "8px")
-    , ("align-self", "center")
-    ]
-
-containerStyle : Attribute
-containerStyle =
-  style
-    [ ("display", "flex")
-    , ("flex-direction", "column")
-    , ("max-width", "1000px")
-    , ("margin" , "auto")
-    ]
-
-dateContainerStyle : Attribute
-dateContainerStyle =
-  style
-    [ ("display", "flex")
-    , ("flex-wrap", "wrap")
-    , ("justify-content", "space-around")
-    , ("align-items", "center")
-    ]
-
-dateStyle : Attribute
-dateStyle =
-  style
-    [ ("padding", "4px")
-    ]
-
-statusStyle : Attribute
-statusStyle =
-  style
-    [ ("margin", "4px 0 4px 0")
-    ]
-
 app : StartApp.App Model
 app =
   StartApp.start
@@ -209,46 +159,25 @@ port runner = app.tasks
 
 getData : String -> String -> Effects Action
 getData from to = getTask from to
-  |> Task.toMaybe
+  |> Task.toResult
   |> Task.map toAction
   |> Effects.task
 
-toAction : Maybe Response -> Action
-toAction list =
+toAction : Result Http.Error Response -> Action
+toAction response =
   let
     requestFailed = SetStatus "Request failed"
   in
-    case list of
-      Nothing -> requestFailed
-      (Just response) -> case response.status of
+    case response of
+      Err err -> SetStatus <| "Error: " ++ showHttpError err
+      Ok response -> case response.status of
         0 -> SetMessages response.messages response.fromDate response.toDate
-        _ -> requestFailed
+        _ -> SetStatus "Api error"
 
-headerStyle : Attribute
-headerStyle =
-  style
-    [ ("display", "flex")
-    , ("flex-direction", "column")
-    , ("align-items", "center")
-    ]
-
-inputStyle : String -> Attribute
-inputStyle date =
-  let
-    boxColor =
-      if validDate date
-         then lightGreen
-         else lightRed
-  in
-    style
-      [ ("padding", "10px 0")
-      , ("font-size", "1.5em")
-      , ("text-align", "center")
-      , ("box-shadow", "0 0 6px " ++ boxColor)
-      ]
-
-lightGreen : String
-lightGreen = "#79CF6D"
-
-lightRed : String
-lightRed = "#CF6D6D"
+showHttpError : Http.Error -> String
+showHttpError err =
+  case err of
+    Http.Timeout -> "Request timed out"
+    Http.NetworkError -> "Can't connect to the server"
+    Http.UnexpectedPayload _ -> "Invalid response from api"
+    Http.BadResponse code _ -> "Got response code " ++ (toString code)
