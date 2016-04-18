@@ -46,23 +46,24 @@ type Action
   = NoOp
   | SetMessages (List Message) String String
   | SetStatus String
-  | SetDates String String
-  | UpdateDate String DateField
+  | UpdateDate DateField String
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
-    NoOp                  -> (model, Effects.none)
-    SetMessages newMessages fromDate toDate -> ({ model | messages = newMessages
+    NoOp                  -> nofx model
+    SetMessages newMessages fromDate toDate -> nofx { model | messages = newMessages
                                                         , loadingMessage = "Messages Loaded"
                                                         , fromDateShow = fromDate
-                                                        , toDateShow = toDate }, Effects.none)
-    SetStatus status      -> ({ model | loadingMessage = status }, Effects.none)
-    SetDates from to      -> ({ model | fromDateShow = from, toDateShow = to}, Effects.none)
-    UpdateDate date field -> dateFormChange model date field
+                                                        , toDateShow = toDate }
+    SetStatus status      -> nofx { model | loadingMessage = status }
+    UpdateDate field date -> dateFormChange model field date
 
-dateFormChange : Model -> String -> DateField -> (Model, Effects Action)
-dateFormChange model newDate field =
+nofx : Model -> (Model, Effects Action)
+nofx model = (model, Effects.none)
+
+dateFormChange : Model -> DateField -> String -> (Model, Effects Action)
+dateFormChange model field newDate =
   let updatedModel = updateDate model newDate field
       loadingModel = { updatedModel | loadingMessage = "Loading messages"
                                     , fromDateShow = ""
@@ -87,7 +88,10 @@ updateDate model date field =
 validDate : String -> Bool
 validDate x =
   case String.split "-" x of
-    [year, month, day] -> (String.length year == 4) && (String.length month == 2) && (String.length day == 2)
+    [year, month, day] ->
+      (String.length year == 4)
+      && (String.length month == 2)
+      && (String.length day == 2)
     [""] -> True
     _ -> False
 
@@ -95,9 +99,9 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   let allMessages = model.messages
       th' field = th [] [text field]
-      tr' message = tr [class "logrow"] [ td [] [text <| message.timestamp]
-                       , td [] [text <| message.nickname]
-                       , td [] [text <| message.message]
+      tr' message = tr [class "logrow"] [ td [] [text message.timestamp]
+                       , td [] [text message.nickname]
+                       , td [] [text message.message]
                        ]
       statusMess txt = p [statusStyle] [text txt]
   in
@@ -107,7 +111,7 @@ view address model =
         [ input
           [ placeholder "From: YYYY-MM-DD"
           , value (model.fromDate)
-          , on "input" targetValue (\x -> Signal.message address (UpdateDate x From))
+          , on "input" targetValue (UpdateDate From >> Signal.message address)
           , inputStyle model.fromDate
           ]
           []
@@ -116,7 +120,7 @@ view address model =
         [ input
           [ placeholder "To: YYYY-MM-DD"
           , value (model.toDate)
-          , on "input" targetValue (\x -> Signal.message address (UpdateDate x To))
+          , on "input" targetValue (UpdateDate To >> Signal.message address)
           , inputStyle model.toDate
           ]
           []
@@ -195,7 +199,7 @@ message =
     ("timestamp" := Json.Decode.string)
 
 getTask : String -> String -> Task Http.Error Response
-getTask from to = Http.get logResponse (Http.url "/api/log/" [("from", from), ("to", to)])
+getTask from to = Http.get logResponse <| Http.url "/api/log/" [("from", from), ("to", to)]
 
 port runner : Signal (Task Never ())
 port runner = app.tasks
