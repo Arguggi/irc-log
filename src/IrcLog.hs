@@ -20,14 +20,12 @@ import           Lib
 import qualified Network.Socket             as NS
 import qualified Opaleye                    as O
 import           System.IO
-import           System.Remote.Monitoring
 import           Text.Printf
 
 
 -- Set up actions to run on start and end, and run the main loop
 main :: IO Bot
-main = do
-    _ <- forkServer "localhost" 23453
+main =
     bracket connectAll disconnectAll loop
         where
         loop = runReaderT run
