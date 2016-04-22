@@ -67,12 +67,15 @@ run = do
     write "JOIN" chan
     asks socket >>= listen
 
+showTime :: UTCTime -> T.Text
+showTime x  = T.pack (show x)
+
 -- Process each line from the server
 listen :: Handle -> Net Bot
 listen h = forever $ do
     s <- io $ fmap (TEnc.decodeUtf8With TErr.lenientDecode) (B.hGetLine h)
-    io (TIO.putStrLn s)
     time <- io getCurrentTime
+    io (TIO.putStrLn (showTime time <-> "~" <-> s))
     if ping s then pong s
         else either ignore saveDb $ parseOnly (ircParser time) s
     where
@@ -114,8 +117,9 @@ saveDb x = do
 write :: T.Text -> T.Text -> Net ()
 write s t = do
     h <- asks socket
+    time <- io getCurrentTime
     io $ TIO.hPutStr h (s <-> t <> "\r\n")
-    io $ TIO.putStrLn (s <-> t)
+    io $ TIO.putStrLn (showTime time <-> "~" <-> s <-> t)
 
 -- Append with extra space
 (<->) :: (Data.String.IsString m, Monoid m) => m -> m -> m
