@@ -51,26 +51,30 @@ type Action
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-  case action of
-    NoOp                  -> nofx model
-    SetMessages newMessages fromDate toDate -> nofx { model | messages = newMessages
-                                                        , loadingMessage = "Messages Loaded"
-                                                        , fromDateShow = fromDate
-                                                        , toDateShow = toDate }
-    SetStatus status      -> nofx { model | loadingMessage = status }
-    UpdateDate field date -> dateFormChange model field date
+  let
+    showStatus list = (toString <| List.length list) ++ " Messages Loaded"
+  in
+    case action of
+      NoOp                  -> nofx model
+      SetMessages newMessages fromDate toDate -> nofx { model | messages = newMessages
+                                                      , loadingMessage = showStatus newMessages
+                                                      , fromDateShow = fromDate
+                                                      , toDateShow = toDate }
+      SetStatus status      -> nofx { model | loadingMessage = status }
+      UpdateDate field date -> dateFormChange model field date
 
 nofx : Model -> (Model, Effects Action)
 nofx model = (model, Effects.none)
 
 dateFormChange : Model -> DateField -> String -> (Model, Effects Action)
 dateFormChange model field newDate =
-  let updatedModel = updateDate model newDate field
-      loadingModel = { updatedModel | loadingMessage = "Loading messages"
+  let
+    updatedModel = updateDate model newDate field
+    loadingModel = { updatedModel | loadingMessage = "Loading messages"
                                     , fromDateShow = ""
                                     , toDateShow = ""
                                     , messages = []}
-      invalidDateModel = { updatedModel | loadingMessage = "Invalid Date" }
+    invalidDateModel = { updatedModel | loadingMessage = "Invalid Date" }
   in
     if validDate newDate
       then (loadingModel , (getData (safeDate updatedModel.fromDate) (safeDate updatedModel.toDate)))
@@ -84,13 +88,14 @@ updateDate model date field =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  let allMessages = model.messages
-      th' field = th [] [text field]
-      tr' message = tr [class "logrow"] [ td [] [text message.timestamp]
-                       , td [] [text message.nickname]
-                       , td [] [text message.message]
-                       ]
-      statusMess txt = p [statusStyle] [text txt]
+  let
+    allMessages = model.messages
+    th' field = th [] [text field]
+    tr' message = tr [class "logrow"] [ td [] [text message.timestamp]
+                     , td [] [text message.nickname]
+                     , td [] [text message.message]
+                     ]
+    statusMess txt = p [statusStyle] [text txt]
   in
     div [class "container", containerStyle]
     [ div [class "date-container", dateContainerStyle]
