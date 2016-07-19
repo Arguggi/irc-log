@@ -22,6 +22,7 @@ library
                      , aeson
                      , attoparsec
                      , bytestring
+                     , http-api-data
                      , mtl
                      , network
                      , opaleye
@@ -41,7 +42,6 @@ executable irc-log
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts "-with-rtsopts=-N -T" -Wall
   build-depends:       base
-                     , ekg
                      , irc-log
   default-language:    Haskell2010
 

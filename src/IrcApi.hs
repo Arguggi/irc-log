@@ -18,15 +18,24 @@ import           Network.Wai
 import qualified Network.Wai.Handler.Warp   as W
 import qualified Opaleye                    as O
 import           Servant
+import           Web.HttpApiData
 
-instance FromText UTCTime where
-    fromText = parseTimeM False defaultTimeLocale "%F" . T.unpack
+
+-- The parseQueryParam instance for UTCTime expects a Text with format
+-- "%H:%M:%SZ" but since we only want to query for days we have to change the instance
+-- with the newtype
+newtype MyDay = MyDay { unDay :: UTCTime }
+
+instance FromHttpApiData MyDay where
+    parseQueryParam x = MyDay <$> parseTime x
+        where parseTime :: T.Text -> Either T.Text UTCTime
+              parseTime = parseTimeM False defaultTimeLocale "%F" . T.unpack
 
 type UserAPI
     =   "api"
         :> "log"
-        :> QueryParam "from" UTCTime
-        :> QueryParam "to" UTCTime
+        :> QueryParam "from" MyDay
+        :> QueryParam "to" MyDay
         :> Get '[JSON] LogResponse
     :<|>
         Raw
@@ -41,11 +50,14 @@ server conn = (\x y -> liftIO $ queryLog conn x y)
 app :: PG.Connection -> Application
 app conn  = serve userAPI $ IrcApi.server conn
 
-queryLog :: PG.Connection -> Maybe UTCTime -> Maybe UTCTime -> IO LogResponse
-queryLog conn from to = do
+queryLog :: PG.Connection -> Maybe MyDay -> Maybe MyDay -> IO LogResponse
+queryLog conn fromD toD = do
     currentTime <- getCurrentTime
-    -- get last day by default
-    let (start, end) = dateRange currentTime from to
+        -- Unwrap the newtype
+    let from = fmap unDay fromD
+        to = fmap unDay toD
+        -- get last day by default
+        (start, end) = dateRange currentTime from to
     sqlMessages <- runCodeQuery conn (allMessagesBetween start end)
     let messages = fmap toPrivMsg sqlMessages
     return $ LogResponse 0 start end messages
