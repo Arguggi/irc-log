@@ -76,7 +76,7 @@ queryLog conn fromD toD = do
     let messageList = fmap toPrivMsg sqlMessages
     return $ LogResponse 0 start end messageList
 
-maxDays :: Int
+maxDays :: Integer
 maxDays = 3
 
 -- | * Maximum date range should be 'maxDays' days
@@ -85,9 +85,9 @@ maxDays = 3
 --   * If only an end date is present we want (end - 3, end).
 dateRange :: UTCTime -> Maybe UTCTime -> Maybe UTCTime -> (UTCTime, UTCTime)
 dateRange now Nothing     Nothing   = (addDaysUTC (-1) now, now)
-dateRange _   Nothing     (Just to) = (addDaysUTC (-3) to, to)
-dateRange _   (Just from) Nothing   = (from, addDaysUTC 3 from)
-dateRange _   (Just from) (Just to) = (from, min (addDaysUTC 3 from) to)
+dateRange _   Nothing     (Just to) = (addDaysUTC (-maxDays) to, to)
+dateRange _   (Just from) Nothing   = (from, addDaysUTC maxDays from)
+dateRange _   (Just from) (Just to) = (from, min (addDaysUTC maxDays from) to)
 
 addDaysUTC :: Integer -> UTCTime -> UTCTime
 addDaysUTC n (UTCTime day time) = UTCTime (addDays n day) time
