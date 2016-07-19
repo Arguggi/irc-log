@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Main where
 
@@ -24,10 +25,25 @@ import           Web.HttpApiData            ()
 -- with the newtype
 newtype MyDay = MyDay { unDay :: UTCTime }
 
+-- Since parseTimeM calls fail and throws an exception servant won't convert any invalid
+-- dates received as Nothing but will fail with "Something went wrong"
+-- We can control this newtypes fail function and avoid throwing an exception
+newtype MyEither a b = MyEither { runMyEither :: Either a b } deriving (Applicative, Functor)
+
+instance Monad (MyEither e) where
+    (MyEither (Left  l)) >>= _ = MyEither $ Left l
+    (MyEither (Right r)) >>= f = f r
+    fail _ = MyEither $ Left undefined
+
 instance FromHttpApiData MyDay where
-    parseQueryParam x = MyDay <$> parseUTC x
-        where parseUTC :: T.Text -> Either T.Text UTCTime
+    parseQueryParam x = errorParsing . runMyEither $ MyDay <$> parseUTC x
+        where parseUTC :: T.Text -> MyEither T.Text UTCTime
               parseUTC = parseTimeM False defaultTimeLocale "%F" . T.unpack
+
+-- | 'MyEither's fail method returns a Left undefined, lets get rid of that
+errorParsing :: Either T.Text MyDay -> Either T.Text MyDay
+errorParsing (Left _ ) = Left "parsing error"
+errorParsing x = x
 
 type UserAPI
     =   "api"
