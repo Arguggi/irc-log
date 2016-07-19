@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module IrcLog where
+module Main where
 
 import           Control.Exception
 import           Control.Monad
