@@ -25,7 +25,9 @@ import           Text.Printf
 
 -- Set up actions to run on start and end, and run the main loop
 main :: IO Bot
-main =
+main = do
+    hSetBuffering stdin LineBuffering
+    hSetBuffering stdout LineBuffering
     bracket connectAll disconnectAll loop
         where
         loop = runReaderT run

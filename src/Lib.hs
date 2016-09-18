@@ -45,9 +45,9 @@ data PrivMsg
 
 data LogResponse
     = LogResponse
-        { status :: Int
+        { status   :: Int
         , fromDate :: UTCTime
-        , toDate :: UTCTime
+        , toDate   :: UTCTime
         , messages :: [PrivMsg]
         }
 
