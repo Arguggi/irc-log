@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Main where
 
@@ -13,6 +12,7 @@ import qualified Data.Text                  as T
 import           Data.Time
 import qualified Database.PostgreSQL.Simple as PG
 import           Lib
+import           DB
 import           Network.Wai
 import qualified Network.Wai.Handler.Warp   as W
 import qualified Opaleye                    as O
@@ -49,7 +49,7 @@ userAPI = Proxy
 
 apiServer :: PG.Connection -> Server UserAPI
 apiServer conn = (\x y -> liftIO $ queryLog conn x y)
-    :<|> serveDirectory "elm/output"
+    :<|> serveDirectory "."
 
 app :: PG.Connection -> Application
 app conn  = serve userAPI $ apiServer conn
@@ -64,7 +64,7 @@ queryLog conn fromD toD = do
         (start, end) = dateRange currentTime from to
     sqlMessages <- runCodeQuery conn (allMessagesBetween start end)
     let messageList = fmap toPrivMsg sqlMessages
-    return $ LogResponse 0 start end messageList
+    return $ LogResponse Ok start end messageList
 
 maxDays :: Integer
 maxDays = 3

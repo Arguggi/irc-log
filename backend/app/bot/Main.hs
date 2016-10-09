@@ -17,6 +17,7 @@ import qualified Data.Text.IO               as TIO
 import           Data.Time
 import           Database.PostgreSQL.Simple as PG
 import           Lib
+import           DB
 import qualified Network.Socket             as NS
 import qualified Opaleye                    as O
 import           System.IO
@@ -24,7 +25,7 @@ import           Text.Printf
 
 
 -- Set up actions to run on start and end, and run the main loop
-main :: IO Bot
+main :: IO (Bot PG.Connection)
 main = do
     hSetBuffering stdin LineBuffering
     hSetBuffering stdout LineBuffering
@@ -32,13 +33,13 @@ main = do
         where
         loop = runReaderT run
 
-connectAll :: IO Bot
+connectAll :: IO (Bot PG.Connection)
 connectAll = do
     ircHandle <- connectBot
     dbConnection <- PG.connectPostgreSQL "port=5432 user=irc dbname=irc"
     return $ Bot ircHandle dbConnection
 
-disconnectAll :: Bot -> IO ()
+disconnectAll :: Bot PG.Connection -> IO ()
 disconnectAll x = do
     putStrLn "Closing connection to db and irc network handle"
     hClose . socket $ x
@@ -62,7 +63,7 @@ connectBot = notify $ do
 
 -- We're in the Net monad now, so we've connected successfully
 -- Join a channel, and start processing commands
-run :: Net Bot
+run :: Net PG.Connection (Bot PG.Connection)
 run = do
     write "NICK" nick
     write "USER" (nick `mappend` " 0 * :argu-bot")
@@ -73,7 +74,7 @@ showTime :: UTCTime -> T.Text
 showTime x  = T.pack (show x)
 
 -- Process each line from the server
-listen :: Handle -> Net Bot
+listen :: Handle -> Net PG.Connection (Bot PG.Connection)
 listen h = forever $ do
     s <- io $ fmap (TEnc.decodeUtf8With TErr.lenientDecode) (B.hGetLine h)
     time <- io getCurrentTime
@@ -86,7 +87,7 @@ listen h = forever $ do
 ping :: T.Text -> Bool
 ping x = "PING :" `T.isPrefixOf` x
 
-pong :: T.Text -> Net ()
+pong :: T.Text -> Net PG.Connection ()
 pong x = write "PONG" (':' `T.cons` T.drop 6 x)
 
 -- Parse Irc message:
@@ -108,7 +109,7 @@ insertMessage conn (PrivMsg n t m) =
         logTable
         (SqlPrivMsg Nothing (O.pgStrictText n) (O.pgUTCTime t) (O.pgStrictText m))
 
-saveDb :: PrivMsg -> Net ()
+saveDb :: PrivMsg -> Net PG.Connection ()
 saveDb x = do
     conn <- asks dbConn
     rows <- io $ insertMessage conn x
@@ -116,7 +117,7 @@ saveDb x = do
     return ()
 
 -- Send a message out to the server we're currently connected to
-write :: T.Text -> T.Text -> Net ()
+write :: T.Text -> T.Text -> Net PG.Connection ()
 write s t = do
     h <- asks socket
     time <- io getCurrentTime
@@ -128,5 +129,5 @@ write s t = do
 a <-> b = a <> " " <> b
 
 -- Convenience.
-io :: IO a -> Net a
+io :: IO a -> Net PG.Connection a
 io = liftIO

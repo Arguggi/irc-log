@@ -13,19 +13,6 @@ build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
-library
-  hs-source-dirs:      src
-  exposed-modules:     Lib
-  build-depends:       base >= 4.7 && < 5
-                     , aeson
-                     , mtl
-                     , opaleye
-                     , product-profunctors
-                     , postgresql-simple
-                     , text
-                     , time
-  default-language:    Haskell2010
-
 executable irc-bot
   hs-source-dirs:      app/bot/
   main-is:             Main.hs
@@ -33,7 +20,7 @@ executable irc-bot
   build-depends:       base
                      , attoparsec
                      , bytestring
-                     , irc-log
+                     , irc-lib
                      , mtl
                      , network
                      , opaleye
@@ -47,7 +34,7 @@ executable irc-api
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:       base
-                     , irc-log
+                     , irc-lib
                      , http-api-data
                      , opaleye
                      , postgresql-simple
@@ -65,7 +52,7 @@ Test-Suite test-irc-log
   build-depends:       base
                      , QuickCheck
                      , quickcheck-instances
-                     , irc-log
+                     , irc-lib
                      , time
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010

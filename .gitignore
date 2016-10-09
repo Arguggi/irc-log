@@ -21,3 +21,4 @@ cabal.sandbox.config
 elm-stuff
 # No need to add the js created with elm
 elm/output/elm.js
+codex.tags
