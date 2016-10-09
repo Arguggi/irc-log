@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
+import Data.FileEmbed
 import Data.Maybe
 import Data.Foldable
 import Data.Monoid
@@ -24,20 +26,40 @@ import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
 
-main :: IO ()
-main = mainWidgetWithHead headWidget bodyWidget
+toQuery :: T.Text -> T.Text -> QueryDates
+toQuery from to =
+    let validF = validDate from
+        validT = validDate to
+    in case (validF, validT) of
+        -- The dates can either be Valid, Invalid or Empty
+        -- When one date is empty or invalid and the other is valid
+        -- we shouldn't keep fetching data for the Valid when the invalid/empty
+        -- one changes
+        (ValidDate, EmptyField) -> From from
+        (EmptyField, ValidDate) -> To to
+        (ValidDate, ValidDate ) -> Both from to
+        _                       -> Neither
 
-headWidget :: MonadWidget t m => m ()
-headWidget = elAttr "link" ("href" =: "style.css") $ return ()
+validDate :: T.Text -> InputCase
+validDate date
+    | T.null date = EmptyField
+    | isJust $ (parseTimeM False defaultTimeLocale "%F" (T.unpack date) :: Maybe UTCTime) = ValidDate
+    | otherwise = InvalidDate
+
+main :: IO ()
+main = mainWidgetWithCss $(embedFile "style.css") bodyWidget
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = elClass "div" "container" $ do
-    t <- textInput def
+    (fromInput, toInput, showReverse, showToday) <- elClass "div" "input-container" $ do
+        fI <- textInput def
+        tI <- textInput def
+        sR <- checkbox False def
+        sT <- checkbox False def
+        return (fI, tI, sR, sT)
+    let zippedDyn = updated $ zipDynWith toQuery (_textInput_value fromInput) (_textInput_value toInput)
     today <- liftIO getCurrentTime
-    showReverse <- checkbox False def
-    showToday <- checkbox False def
-    let req = xhrRequest "GET" "http://localhost:8645/api/log?from=2016-10-07" def
-    asyncRequest <- performRequestAsync (tag (constant req) (_textInput_keypress t))
+    asyncRequest <- performRequestAsync $ fforMaybe zippedDyn changeInput
     rec state <- foldDyn updateState initialState updates
         let updates = leftmost
                 -- Http Request
@@ -46,10 +68,24 @@ bodyWidget = elClass "div" "container" $ do
                 , const ReverseMessages <$> _checkbox_change showReverse
                 -- "Only show today" checkbox
                 , decideFilter today <$> updated (_checkbox_value showToday)
+                -- We start fetching the data
+                , const (SetStatus Loading) <$> fforMaybe zippedDyn changeInput
                 ]
 
-        elDynHtml' "dataContainer" (stateToHtml <$> state)
+        elDynHtmlAttr' "div" ("class" =: "data-container") (stateToHtml <$> state)
     return ()
+
+changeInput :: QueryDates -> Maybe (XhrRequest ())
+changeInput Neither = Nothing
+changeInput notNull = Just finalRequest
+    where
+        finalParams = toParams notNull
+        finalRequest = xhrRequest "GET" ("http://localhost:8645/api/log" <> finalParams) def
+
+toParams :: QueryDates -> T.Text
+toParams (From from) = "?from=" <> from
+toParams (To to) = "?to=" <> to
+toParams (Both from to) = "?from=" <> from <> "&" <> "to=" <> to
 
 stateToHtml :: State -> T.Text
 stateToHtml localState = TL.toStrict . renderText $ case _httpStatus localState of

@@ -21,6 +21,7 @@ executable irc-dom
   -- other-extensions:
   build-depends:       base >=4.9 && <4.10
                      , data-default
+                     , file-embed
                      , irc-lib
                      , lens
                      , lucid

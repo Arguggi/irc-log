@@ -22,6 +22,17 @@ import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
 
+data InputCase
+    = EmptyField
+    | ValidDate
+    | InvalidDate
+
+data QueryDates
+    = Both T.Text T.Text
+    | From T.Text
+    | To T.Text
+    | Neither
+
 data Command
     = SetStatus Status
     | UpdateMessages LogResponse
