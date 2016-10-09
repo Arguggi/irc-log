@@ -21,7 +21,7 @@ import Data.Default (def)
 import Lib
 import Types
 import Lucid
-import Control.Lens
+import Control.Lens hiding (Reversed)
 import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
@@ -65,15 +65,23 @@ bodyWidget = elClass "div" "container" $ do
                 -- Http Request
                 [ xhrToCommand <$> asyncRequest
                 -- "Reverse Messages" checkbox
-                , const ReverseMessages <$> _checkbox_change showReverse
+                , changeOrder <$> _checkbox_change showReverse
                 -- "Only show today" checkbox
-                , decideFilter today <$> updated (_checkbox_value showToday)
+                , (changeFilter today) <$> updated (_checkbox_value showToday)
                 -- We start fetching the data
                 , const (SetStatus Loading) <$> fforMaybe zippedDyn changeInput
                 ]
 
         elDynHtmlAttr' "div" ("class" =: "data-container") (stateToHtml <$> state)
     return ()
+
+changeOrder :: Bool -> Command
+changeOrder True = SetOrder Reversed
+changeOrder False = SetOrder Normal
+
+changeFilter :: UTCTime -> Bool -> Command
+changeFilter now True = SetFilter (OnlyToday now)
+changeFilter _ False = SetFilter None
 
 changeInput :: QueryDates -> Maybe (XhrRequest ())
 changeInput Neither = Nothing
@@ -93,18 +101,27 @@ stateToHtml localState = TL.toStrict . renderText $ case _httpStatus localState 
         p_ [class_ "statusMessage"] $ toHtml (showStatus . _httpStatus $ localState)
         p_ [class_ "fromDate"] $ toHtml (maybe invalidDate (showDate . runFD) $ _fromDate localState)
         p_ [class_ "toDate"] $ toHtml (maybe invalidDate (showDate . runTD) $ _toDate localState)
-        let logRows = fromMaybe [] (_showingMessages localState)
+        let listOrder = _order localState
+            logRows = case listOrder of
+                Normal -> fromMaybe [] (_messages localState)
+                Reversed -> reverse $ fromMaybe [] (_messages localState)
         table_ [class_ "logtable"] $ do
             thead_ [class_ "loghead"] $
                 tr_ $ do
                     th_ "Timestamp (UTC)"
                     th_ "Nickname"
                     th_ "Message"
-            tbody_ [class_ "logbody"] $ foldMap toRow logRows
+            tbody_ [class_ "logbody"] $ foldMap (toRow (_dateFilter localState)) logRows
     x -> p_ (toHtml . showStatus $ x)
 
-toRow :: PrivMsg -> Html ()
-toRow msg = tr_ [class_ "logrow"] $ do
+toRow :: Filter -> PrivMsg -> Html ()
+toRow (OnlyToday today) msg = if (isToday today msg)
+    then buildRow msg
+    else mempty
+toRow _ msg = buildRow msg
+
+buildRow :: PrivMsg -> Html ()
+buildRow msg = tr_ [class_ "logrow"] $ do
     td_ (toHtml . showDate $ timestamp msg)
     td_ (toHtml $ nickname msg)
     td_ (toHtml $ message msg)
@@ -121,14 +138,6 @@ showStatus Lib.Invalid = "Invalid date"
 showStatus ServerError = "Error while fetching data"
 showStatus Ok = "Loaded"
 
-
--- Decide the command when toggling the "OnlyToday" checkbox
--- If it's True we want to filter the messages, otherwise we should show every
--- message
-decideFilter :: UTCTime -> Bool -> Command
-decideFilter now True = FilterToday now
-decideFilter _ False = ShowAll
-
 -- Try and parse the response
 xhrToCommand :: XhrResponse -> Command
 xhrToCommand response = fromMaybe (SetStatus Lib.Invalid) $ UpdateMessages <$> decodeXhrResponse response
@@ -137,17 +146,20 @@ xhrToCommand response = fromMaybe (SetStatus Lib.Invalid) $ UpdateMessages <$> d
 updateState :: Command -> State -> State
 updateState cmd oldState = case cmd of
     SetStatus newStatus -> oldState & httpStatus .~ newStatus
-    UpdateMessages response -> updateStateResponse response
-    ReverseMessages -> oldState & showingMessages %~ fmap reverse
-    FilterToday today -> oldState & showingMessages .~ filterToday today (_allMessages oldState)
-    ShowAll -> oldState & showingMessages .~ (_allMessages oldState)
+    UpdateMessages response -> updateStateResponse response oldState
+    SetOrder newOrder -> oldState & order .~ newOrder
+    SetFilter newFilter -> oldState & dateFilter .~ newFilter
 
-updateStateResponse :: LogResponse -> State
-updateStateResponse (LogResponse stat fromD toD mess) = case stat of
-    Ok -> State (Just mess) (Just mess) (Just (FD fromD)) (Just (TD toD)) Ok
-    ServerError -> nullState ServerError
-    Lib.Invalid -> nullState Lib.Invalid
-    Loading -> initialState
+updateStateResponse :: LogResponse -> State -> State
+updateStateResponse (LogResponse stat fromD toD mess) oldState = case stat of
+    Ok -> oldState & Types.messages .~ Just mess
+                   & Types.fromDate .~ Just (FD fromD)
+                   & Types.toDate   .~ Just (TD toD)
+                   & Types.httpStatus .~ Ok
+    x -> oldState & Types.messages .~ Nothing
+                  & Types.fromDate .~ Nothing
+                  & Types.toDate   .~ Nothing
+                  & Types.httpStatus .~ x
 
 filterToday :: UTCTime -> Maybe [PrivMsg] -> Maybe [PrivMsg]
 filterToday today = fmap (filter (isToday today))

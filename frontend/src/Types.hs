@@ -22,31 +22,43 @@ import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
 
+data Order
+    = Normal
+    | Reversed
+    deriving (Show)
+
+data Filter
+    = None
+    | OnlyToday UTCTime
+    deriving (Show)
+
 data InputCase
     = EmptyField
     | ValidDate
     | InvalidDate
+    deriving (Show)
 
 data QueryDates
     = Both T.Text T.Text
     | From T.Text
     | To T.Text
     | Neither
+    deriving (Show)
 
 data Command
     = SetStatus Status
     | UpdateMessages LogResponse
-    | ReverseMessages
-    | FilterToday UTCTime
-    | ShowAll
+    | SetOrder Order
+    | SetFilter Filter
     deriving (Show)
 
 data State
     = State
-    { _showingMessages :: Maybe [PrivMsg]
-    , _allMessages :: Maybe [PrivMsg]
+    { _messages :: Maybe [PrivMsg]
     , _fromDate :: Maybe FromDate
     , _toDate :: Maybe ToDate
+    , _order :: Order
+    , _dateFilter :: Filter
     , _httpStatus :: Status
     } deriving (Show)
 
@@ -62,4 +74,4 @@ initialState :: State
 initialState = nullState Loading
 
 nullState :: Status -> State
-nullState newStatus = State Nothing Nothing Nothing Nothing newStatus
+nullState newStatus = State Nothing Nothing Nothing Normal None newStatus
