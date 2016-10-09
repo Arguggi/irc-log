@@ -22,6 +22,7 @@ executable irc-dom
   build-depends:       base >=4.9 && <4.10
                      , data-default
                      , irc-lib
+                     , lens
                      , lucid
                      , reflex
                      , reflex-dom

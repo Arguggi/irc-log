@@ -1,0 +1,55 @@
+.boh {
+    align-self: center;
+    border-spacing: 8px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    max-width: 1000px;
+}
+
+.dateContainer {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.date {
+    padding: 4px;
+}
+
+.header {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.input {
+    font-size: 1.5em;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.status {
+    margin: 4px 0 4px 0;
+}
+
+
+tr:nth-child(even) {
+    background-color: #FFFFFF;
+}
+
+tr:nth-child(odd) {
+    background-color: #F8F8F8;
+}
+
+/*
+lightGreen : String
+lightGreen = "#79CF6D"
+
+lightRed : String
+lightRed = "#CF6D6D"
+*/

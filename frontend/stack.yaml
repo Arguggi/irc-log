@@ -24,8 +24,8 @@ packages:
     commit: a63aba90bdea5ae5b3e1506d468613bdfedcdfa3
   extra-dep: true
 - location:
-    git: git@github.com:Arguggi/reflex-dom.git
-    commit: b0ebab4ec85cd4529177b5445c7ef11f1bda2f1b
+    git: https://github.com/Arguggi/reflex-dom.git
+    commit: 767c9b7625c61208b552f64b95719edac18a6e29
   extra-dep: true
 
 extra-deps:
