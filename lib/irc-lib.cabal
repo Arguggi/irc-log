@@ -26,7 +26,7 @@ library
                      , product-profunctors
                      , text
                      , time
-  if impl(ghc)
+  if !impl(ghcjs)
     build-depends:     opaleye
     exposed-modules:   DB
 
