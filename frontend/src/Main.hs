@@ -22,7 +22,7 @@ import Data.Time.Calendar
 import Data.Time.Format
 
 main :: IO ()
-main = mainWidgetWithCss $(embedFile "style.css") bodyWidget
+main = mainWidget bodyWidget
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = elClass "div" "container" $ do
@@ -71,7 +71,7 @@ apiRequest :: T.Text -> XhrRequest ()
 apiRequest params = xhrRequest "GET" (apiUrl <> params) def
 
 apiUrl :: T.Text
-apiUrl = "http://localhost:8645/api/log/"
+apiUrl = "/api/log/"
 
 toParams :: QueryDates -> T.Text
 toParams (From from) = "?from=" <> from

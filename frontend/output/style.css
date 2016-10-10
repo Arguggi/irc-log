@@ -1,0 +1,71 @@
+.logtable {
+    align-self: center;
+    border-spacing: 8px;
+}
+
+
+.dateinput-container > input {
+    font-size: 1.5em;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    max-width: 1000px;
+}
+
+.data-container {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.dateinput-container {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.checkbox-container {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.checkbox-container > div {
+    padding: 1em;
+}
+
+
+.date {
+    padding: 4px;
+}
+
+.header {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.input {
+    font-size: 1.5em;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.statusMessage, .fromDate, .toDate {
+    margin: 4px 0 4px 0;
+}
+
+tr:nth-child(even) {
+    background-color: #FFFFFF;
+}
+
+tr:nth-child(odd) {
+    background-color: #F8F8F8;
+}
