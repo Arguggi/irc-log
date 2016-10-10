@@ -21,42 +21,22 @@ import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
 
-toQuery :: T.Text -> T.Text -> QueryDates
-toQuery from to =
-    let validF = validDate from
-        validT = validDate to
-    in case (validF, validT) of
-        -- The dates can either be Valid, Invalid or Empty
-        -- When one date is empty or invalid and the other is valid
-        -- we shouldn't keep fetching data for the Valid when the invalid/empty
-        -- one changes
-        (ValidDate, EmptyField) -> From from
-        (EmptyField, ValidDate) -> To to
-        (ValidDate, ValidDate ) -> Both from to
-        _                       -> Neither
-
-validDate :: T.Text -> InputCase
-validDate date
-    | T.null date = EmptyField
-    | isJust (parseTimeM False defaultTimeLocale "%F" (T.unpack date) :: Maybe UTCTime) = ValidDate
-    | otherwise = InvalidDate
-
 main :: IO ()
 main = mainWidgetWithCss $(embedFile "style.css") bodyWidget
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = elClass "div" "container" $ do
     (fromInput, toInput, showReverse, showToday) <- elClass "div" "input-container" $ do
-        fI <- textInput def
-        tI <- textInput def
-        sR <- checkbox False def
-        sT <- checkbox False def
-        return (fI, tI, sR, sT)
+        (fI, tI) <- elClass "div" "dateinput-container" $
+            (,) <$> newDateInput "From: YYYY-MM-DD" <*> newDateInput "To: YYYY-MM-DD"
+        (srC, stC) <- elClass "div" "checkbox-container" $
+            (,) <$> newCheckBox "Reverse" <*> newCheckBox "Only today"
+        return (fI, tI, srC, stC)
     let zippedDyn = updated $ zipDynWith toQuery (_textInput_value fromInput) (_textInput_value toInput)
-    today <- liftIO getCurrentTime
     asyncRequest <- performRequestAsync $ fforMaybe zippedDyn changeInput
     post <- getPostBuild
     initialRequest <- performRequestAsync (const (apiRequest "") <$> post)
+    today <- liftIO getCurrentTime
     rec state <- foldDyn updateState initialState updates
         let updates = leftmost
                 -- Http Request from date inputs
@@ -102,7 +82,7 @@ toParams Neither = ""
 stateToHtml :: State -> T.Text
 stateToHtml localState = TL.toStrict . renderText $ case _httpStatus localState of
     Ok -> do
-        p_ [class_ "statusMessage"] $ toHtml (showStatus . _httpStatus $ localState)
+        p_ [class_ "statusMessage"] $ toHtml (showLoadedStatus localState)
         p_ [class_ "fromDate"] $ toHtml (maybe invalidDate (showDate . runFD) $ _fromDate localState)
         p_ [class_ "toDate"] $ toHtml (maybe invalidDate (showDate . runTD) $ _toDate localState)
         let listOrder = _order localState
@@ -117,6 +97,13 @@ stateToHtml localState = TL.toStrict . renderText $ case _httpStatus localState 
                     th_ "Message"
             tbody_ [class_ "logbody"] $ foldMap (toRow (_dateFilter localState)) logRows
     x -> p_ (toHtml . showStatus $ x)
+
+showLoadedStatus :: State -> T.Text
+showLoadedStatus localState =
+    showStatus (_httpStatus localState)
+    <> " "
+    <> (T.pack . show . length) (fromMaybe [] (_messages localState))
+    <> " messages"
 
 toRow :: Filter -> PrivMsg -> Html ()
 toRow (OnlyToday today) msg = if isToday today msg
@@ -144,7 +131,7 @@ showStatus Ok = "Loaded"
 
 -- Try and parse the response
 xhrToCommand :: XhrResponse -> Command
-xhrToCommand response = fromMaybe (SetStatus Lib.Invalid) $ UpdateMessages <$> decodeXhrResponse response
+xhrToCommand response = fromMaybe (SetStatus ServerError) $ UpdateMessages <$> decodeXhrResponse response
 
 -- Update the state according to the command
 updateState :: Command -> State -> State
@@ -171,3 +158,34 @@ filterToday today = fmap (filter (isToday today))
 -- Is the PrivMsg the same day as the utctime?
 isToday :: UTCTime -> PrivMsg -> Bool
 isToday today msg = diffDays (utctDay today) (utctDay . timestamp $ msg) < 1
+
+toQuery :: T.Text -> T.Text -> QueryDates
+toQuery from to =
+    let validF = validDate from
+        validT = validDate to
+    in case (validF, validT) of
+        -- The dates can either be Valid, Invalid or Empty
+        -- When one date is empty or invalid and the other is valid
+        -- we shouldn't keep fetching data for the Valid when the invalid/empty
+        -- one changes
+        (ValidDate, EmptyField) -> From from
+        (EmptyField, ValidDate) -> To to
+        (ValidDate, ValidDate ) -> Both from to
+        _                       -> Neither
+
+validDate :: T.Text -> InputCase
+validDate date
+    | T.null date = EmptyField
+    | isJust (parseTimeM False defaultTimeLocale "%F" (T.unpack date) :: Maybe UTCTime) = ValidDate
+    | otherwise = InvalidDate
+
+newCheckBox :: (DomBuilder t m, PostBuild t m) => T.Text -> m (Checkbox t)
+newCheckBox label = el "div" $ do
+    text label
+    checkbox False def
+
+newDateInput :: (MonadWidget t m) => T.Text -> m (TextInput t)
+newDateInput defText = textInput $ def & textInputConfig_inputType .~ "date"
+                                           & textInputConfig_attributes .~ constDyn attri
+    where
+        attri = "placeholder" =: defText

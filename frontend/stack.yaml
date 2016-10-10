@@ -1,19 +1,5 @@
 resolver: lts-7.2
-compiler: ghcjs-0.2.1.9007002_ghc-8.0.1
-compiler-check: match-exact
-
-setup-info:
-  ghcjs:
-    source:
-      ghcjs-0.2.1.9007002_ghc-8.0.1:
-          url: http://ghcjs.tolysz.org/ghc-8.0-2016-10-01-lts-7.2-9007002.tar.gz
-          sha1: a41ae415328e2b257d40724d13d1386390c26322
-
 extra-package-dbs: []
-
-flags:
-  irc-lib:
-    using-ghc: false
 
 packages:
 - location: '.'
@@ -24,11 +10,17 @@ packages:
     commit: a63aba90bdea5ae5b3e1506d468613bdfedcdfa3
   extra-dep: true
 - location:
-    git: https://github.com/Arguggi/reflex-dom.git
-    commit: 767c9b7625c61208b552f64b95719edac18a6e29
+    git: https://github.com/reflex-frp/reflex-dom.git
+    commit: ed3b790f81f8396324fc9a3495de9c911119facc
+  extra-dep: true
+- location:
+    git: https://github.com/jcristovao/newtype-generics
+    commit: 001f9db314810f7c5fd2a4c6f536f35cceaa277d
   extra-dep: true
 
 extra-deps:
 - ghcjs-dom-0.2.4.0
 - ref-tf-0.4.0.1
 - zenc-0.1.1
+- webkitgtk3-javascriptcore-0.13.2.0
+- MemoTrie-0.6.7
