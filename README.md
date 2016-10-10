@@ -1,13 +1,12 @@
 # Haskell.it irc bot
 
 The bot needs a `postgresql` database listening on `localhost:5432` with a `irc` user (no pass) and
-a database called `irc`. You can find a dump in `db/`
+a database called `irc`. You can find a dump in `backend/db/`
 
 ## Build
 
     $ git clone https://github.com/Arguggi/irc-log.git
-    $ cd irc-log
-    $ stack build
+    $ cd irc-log/backend
 
 Once if finishes you should find 2 executables in `.stack-work`:
 
@@ -20,7 +19,7 @@ If you want to use the irc logger remember to change the `nick` in `Lib.hs`.
 
 - A bot that connects to an irc channel and saves every message in postgres
 - A servant api
-- An elm frontend that queries the api and displays the data
+- An ghcjs frontend that queries the api and displays the data
 
 ## Todo
 
