@@ -3,24 +3,10 @@
 
 module Types where
 
-import Data.Maybe
-import Data.Foldable
-import Data.Monoid
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import GHC.Generics
-import Control.Monad.IO.Class
-import Reflex (holdDyn)
-import Reflex.Dom hiding ((^.), (.~))
-import Reflex.Dom.Class
-import Reflex.Dom.Xhr (performRequestAsync, xhrRequest, decodeXhrResponse)
-import Reflex.Class (tag, constant)
-import Data.Default (def)
 import Lib
 import Control.Lens
 import Data.Time.Clock
-import Data.Time.Calendar
-import Data.Time.Format
 
 data Order
     = Normal
@@ -74,4 +60,4 @@ initialState :: State
 initialState = nullState Loading
 
 nullState :: Status -> State
-nullState newStatus = State Nothing Nothing Nothing Normal None newStatus
+nullState = State Nothing Nothing Nothing Normal None

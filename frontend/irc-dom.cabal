@@ -17,8 +17,7 @@ cabal-version:       >=1.10
 
 executable irc-dom
   main-is:             Main.hs
-  -- other-modules:
-  -- other-extensions:
+  other-modules:       Types
   build-depends:       base >=4.9 && <4.10
                      , data-default
                      , file-embed

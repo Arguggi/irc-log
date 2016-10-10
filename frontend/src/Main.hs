@@ -6,22 +6,17 @@ module Main where
 
 import Data.FileEmbed
 import Data.Maybe
-import Data.Foldable
 import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-import GHC.Generics
 import Control.Monad.IO.Class
-import Reflex (holdDyn)
-import Reflex.Dom hiding ((^.), (.~))
-import Reflex.Dom.Class
+import Reflex.Dom hiding ((.~))
 import Reflex.Dom.Xhr (performRequestAsync, xhrRequest, decodeXhrResponse)
-import Reflex.Class (tag, constant)
 import Data.Default (def)
 import Lib
 import Types
 import Lucid
-import Control.Lens hiding (Reversed)
+import Control.Lens hiding (Reversed, from, to)
 import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
@@ -43,7 +38,7 @@ toQuery from to =
 validDate :: T.Text -> InputCase
 validDate date
     | T.null date = EmptyField
-    | isJust $ (parseTimeM False defaultTimeLocale "%F" (T.unpack date) :: Maybe UTCTime) = ValidDate
+    | isJust (parseTimeM False defaultTimeLocale "%F" (T.unpack date) :: Maybe UTCTime) = ValidDate
     | otherwise = InvalidDate
 
 main :: IO ()
@@ -60,19 +55,22 @@ bodyWidget = elClass "div" "container" $ do
     let zippedDyn = updated $ zipDynWith toQuery (_textInput_value fromInput) (_textInput_value toInput)
     today <- liftIO getCurrentTime
     asyncRequest <- performRequestAsync $ fforMaybe zippedDyn changeInput
+    post <- getPostBuild
+    initialRequest <- performRequestAsync (const (apiRequest "") <$> post)
     rec state <- foldDyn updateState initialState updates
         let updates = leftmost
-                -- Http Request
+                -- Http Request from date inputs
                 [ xhrToCommand <$> asyncRequest
+                -- Start request when page loads
+                , xhrToCommand <$> initialRequest
                 -- "Reverse Messages" checkbox
                 , changeOrder <$> _checkbox_change showReverse
                 -- "Only show today" checkbox
-                , (changeFilter today) <$> updated (_checkbox_value showToday)
+                , changeFilter today <$>  _checkbox_change showToday
                 -- We start fetching the data
                 , const (SetStatus Loading) <$> fforMaybe zippedDyn changeInput
                 ]
-
-        elDynHtmlAttr' "div" ("class" =: "data-container") (stateToHtml <$> state)
+        _ <- elDynHtmlAttr' "div" ("class" =: "data-container") (stateToHtml <$> state)
     return ()
 
 changeOrder :: Bool -> Command
@@ -85,15 +83,21 @@ changeFilter _ False = SetFilter None
 
 changeInput :: QueryDates -> Maybe (XhrRequest ())
 changeInput Neither = Nothing
-changeInput notNull = Just finalRequest
+changeInput notNull = Just $ apiRequest finalParams
     where
         finalParams = toParams notNull
-        finalRequest = xhrRequest "GET" ("http://localhost:8645/api/log" <> finalParams) def
+
+apiRequest :: T.Text -> XhrRequest ()
+apiRequest params = xhrRequest "GET" (apiUrl <> params) def
+
+apiUrl :: T.Text
+apiUrl = "http://localhost:8645/api/log/"
 
 toParams :: QueryDates -> T.Text
 toParams (From from) = "?from=" <> from
 toParams (To to) = "?to=" <> to
 toParams (Both from to) = "?from=" <> from <> "&" <> "to=" <> to
+toParams Neither = ""
 
 stateToHtml :: State -> T.Text
 stateToHtml localState = TL.toStrict . renderText $ case _httpStatus localState of
@@ -115,7 +119,7 @@ stateToHtml localState = TL.toStrict . renderText $ case _httpStatus localState 
     x -> p_ (toHtml . showStatus $ x)
 
 toRow :: Filter -> PrivMsg -> Html ()
-toRow (OnlyToday today) msg = if (isToday today msg)
+toRow (OnlyToday today) msg = if isToday today msg
     then buildRow msg
     else mempty
 toRow _ msg = buildRow msg
