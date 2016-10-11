@@ -77,14 +77,13 @@ toParams (Both from to) = "?from=" <> from <> "&" <> "to=" <> to
 toParams Neither = ""
 
 stateToWidget :: (MonadWidget t m) => State -> m ()
-stateToWidget localState =
-    case _httpStatus localState of
-        Ok -> elClass "div" "data-container" $ do
-            elClass "p" "statusMessage" (text . showLoadedStatus $ localState)
-            elClass "p" "fromDate" (text (maybe invalidDate (showDate . runFD) $ _fromDate localState))
-            elClass "p" "toDate" (text (maybe invalidDate (showDate . runTD) $ _toDate localState))
-            elClass "table" "logtable" $ buildTable localState
-        x -> elClass "p" "statusMessage" (text . showStatus $ x)
+stateToWidget localState = elClass "div" "data-container" $ case _httpStatus localState of
+    Ok -> do
+        elClass "p" "statusMessage" (text . showLoadedStatus $ localState)
+        elClass "p" "fromDate" (text (maybe invalidDate (showDate . runFD) $ _fromDate localState))
+        elClass "p" "toDate" (text (maybe invalidDate (showDate . runTD) $ _toDate localState))
+        elClass "table" "logtable" $ buildTable localState
+    x -> elClass "p" "statusMessage" (text . showStatus $ x)
 
 buildTable :: (MonadWidget t m ) => State -> m ()
 buildTable localState = do
