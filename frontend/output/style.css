@@ -1,8 +1,35 @@
-.logtable {
-    align-self: center;
-    border-spacing: 8px;
+body {
+    background-color: #f7f7f7;
 }
 
+td {
+    padding: 0 3px 0 3px;
+}
+
+input {
+    box-shadow: 0 0 4px -2px #000000;
+}
+
+h1 {
+    text-align: center;
+
+}
+
+header {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    font-size: x-large;
+    margin: auto;
+    margin-bottom: 10px;
+    max-width: 1000px;
+    padding: 0 30px 0 30px;
+}
+
+.logtable {
+    align-self: center;
+    border-spacing: 0 10px;
+}
 
 .dateinput-container > input {
     font-size: 1.5em;
@@ -11,10 +38,12 @@
 }
 
 .container {
+    background-color: white;
     display: flex;
     flex-direction: column;
     margin: auto;
     max-width: 1000px;
+    padding: 30px;
 }
 
 .data-container {
@@ -62,10 +91,28 @@
     margin: 4px 0 4px 0;
 }
 
-tr:nth-child(even) {
+thead {
+    border-bottom: thick dotted #ff0000;
+    border-style: solid;
+}
+
+thead > tr:nth-child(1) {
     background-color: #FFFFFF;
 }
 
+thead > tr:nth-child(1) > th {
+        border-bottom: 2px solid #ddd;
+        padding: 2px;
+}
+
+tr:nth-child(even) {
+    background-color: #E1F5FE;
+}
+
 tr:nth-child(odd) {
-    background-color: #F8F8F8;
+    background-color: #FFFFFF;
+}
+
+tr > td:nth-child(3) {
+    word-break: break-all;
 }

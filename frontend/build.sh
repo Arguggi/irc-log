@@ -5,6 +5,8 @@ OUTPUT_FOLDER="$FRONTEND_FOLDER/output"
 INPUT_FOLDER="$FRONTEND_FOLDER/.stack-work/dist/x86_64-linux/Cabal-1.24.0.0_ghcjs/build/irc-dom/irc-dom.jsexe"
 COMPILER_FOLDER="$HOME/Downloads/compiler-latest"
 
+stack --stack-yaml stack-ghcjs.yaml build
+
 cd "$INPUT_FOLDER" || exit 1
 #for i in ./*.js; do
 #    echo "optimizing $i"

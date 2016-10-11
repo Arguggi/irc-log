@@ -22,33 +22,44 @@ main :: IO ()
 main = mainWidget bodyWidget
 
 bodyWidget :: MonadWidget t m => m ()
-bodyWidget = elClass "div" "container" $ do
-    (fromInput, toInput, showReverse, showToday) <- elClass "div" "input-container" $ do
-        (fI, tI) <- elClass "div" "dateinput-container" $
-            (,) <$> newDateInput "From: YYYY-MM-DD" <*> newDateInput "To: YYYY-MM-DD"
-        (srC, stC) <- elClass "div" "checkbox-container" $
-            (,) <$> newCheckBox "Reverse" <*> newCheckBox "Only today"
-        return (fI, tI, srC, stC)
-    let zippedDyn = updated $ zipDynWith toQuery (_textInput_value fromInput) (_textInput_value toInput)
-    asyncRequest <- performRequestAsync $ fforMaybe zippedDyn changeInput
-    post <- getPostBuild
-    initialRequest <- performRequestAsync (const (apiRequest "") <$> post)
-    today <- liftIO getCurrentTime
-    rec state <- foldDyn updateState initialState updates
-        let updates = leftmost
-                -- Http Request from date inputs
-                [ xhrToCommand <$> asyncRequest
-                -- Start request when page loads
-                , xhrToCommand <$> initialRequest
-                -- "Reverse Messages" checkbox
-                , changeOrder <$> _checkbox_change showReverse
-                -- "Only show today" checkbox
-                , changeFilter today <$>  _checkbox_change showToday
-                -- We start fetching the data
-                , const (SetStatus Loading) <$> fforMaybe zippedDyn changeInput
-                ]
-        _ <- dyn (stateToWidget <$> state)
-    return ()
+bodyWidget = do
+    el "header" $ elClass "h1" "page-title" homePageLink
+    elClass "div" "container" $ do
+        (fromInput, toInput, showReverse, showToday) <- elClass "div" "input-container" $ do
+            (fI, tI) <- elClass "div" "dateinput-container" $
+                (,) <$> newDateInput "From: YYYY-MM-DD" <*> newDateInput "To: YYYY-MM-DD"
+            (srC, stC) <- elClass "div" "checkbox-container" $
+                (,) <$> newCheckBox "Reverse" <*> newCheckBox "Only today"
+            return (fI, tI, srC, stC)
+        let zippedDyn = updated $ zipDynWith toQuery (_textInput_value fromInput) (_textInput_value toInput)
+        asyncRequest <- performRequestAsync $ fforMaybe zippedDyn changeInput
+        post <- getPostBuild
+        initialRequest <- performRequestAsync (const (apiRequest "") <$> post)
+        today <- liftIO getCurrentTime
+        rec state <- foldDyn updateState initialState updates
+            let updates = leftmost
+                    -- Http Request from date inputs
+                    [ xhrToCommand <$> asyncRequest
+                    -- Start request when page loads
+                    , xhrToCommand <$> initialRequest
+                    -- "Reverse Messages" checkbox
+                    , changeOrder <$> _checkbox_change showReverse
+                    -- "Only show today" checkbox
+                    , changeFilter today <$>  _checkbox_change showToday
+                    -- We start fetching the data
+                    , const (SetStatus Loading) <$> fforMaybe zippedDyn changeInput
+                    ]
+            _ <- dyn (stateToWidget <$> state)
+        return ()
+
+homePageLink :: DomBuilder t m => m ()
+homePageLink = do
+    text "#"
+    elAttr "a" ("href" =: itaLink ) (text "haskell.it")
+    text " log"
+
+itaLink :: T.Text
+itaLink = "http://haskell-ita.it/"
 
 changeOrder :: Bool -> Command
 changeOrder True = SetOrder Reversed
