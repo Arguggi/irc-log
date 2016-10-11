@@ -14,10 +14,8 @@ executable irc-dom
   other-modules:       Types
   build-depends:       base >=4.9 && <4.10
                      , data-default
-                     , file-embed
                      , irc-lib
                      , lens
-                     , lucid
                      , reflex
                      , reflex-dom
                      , time

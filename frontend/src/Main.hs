@@ -1,21 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
-import Data.FileEmbed
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
 import Control.Monad.IO.Class
+import Control.Monad (when)
 import Reflex.Dom hiding ((.~))
 import Reflex.Dom.Xhr (performRequestAsync, xhrRequest, decodeXhrResponse)
 import Data.Default (def)
 import Lib
 import Types
-import Lucid
 import Control.Lens hiding (Reversed, from, to)
 import Data.Time.Clock
 import Data.Time.Calendar
@@ -50,7 +47,7 @@ bodyWidget = elClass "div" "container" $ do
                 -- We start fetching the data
                 , const (SetStatus Loading) <$> fforMaybe zippedDyn changeInput
                 ]
-        _ <- elDynHtmlAttr' "div" ("class" =: "data-container") (stateToHtml <$> state)
+        _ <- dyn (stateToWidget <$> state)
     return ()
 
 changeOrder :: Bool -> Command
@@ -79,24 +76,27 @@ toParams (To to) = "?to=" <> to
 toParams (Both from to) = "?from=" <> from <> "&" <> "to=" <> to
 toParams Neither = ""
 
-stateToHtml :: State -> T.Text
-stateToHtml localState = TL.toStrict . renderText $ case _httpStatus localState of
-    Ok -> do
-        p_ [class_ "statusMessage"] $ toHtml (showLoadedStatus localState)
-        p_ [class_ "fromDate"] $ toHtml (maybe invalidDate (showDate . runFD) $ _fromDate localState)
-        p_ [class_ "toDate"] $ toHtml (maybe invalidDate (showDate . runTD) $ _toDate localState)
-        let listOrder = _order localState
-            logRows = case listOrder of
-                Normal -> fromMaybe [] (_messages localState)
-                Reversed -> reverse $ fromMaybe [] (_messages localState)
-        table_ [class_ "logtable"] $ do
-            thead_ [class_ "loghead"] $
-                tr_ $ do
-                    th_ "Timestamp (UTC)"
-                    th_ "Nickname"
-                    th_ "Message"
-            tbody_ [class_ "logbody"] $ foldMap (toRow (_dateFilter localState)) logRows
-    x -> p_ (toHtml . showStatus $ x)
+stateToWidget :: (MonadWidget t m) => State -> m ()
+stateToWidget localState =
+    case _httpStatus localState of
+        Ok -> elClass "div" "data-container" $ do
+            elClass "p" "statusMessage" (text . showLoadedStatus $ localState)
+            elClass "p" "fromDate" (text (maybe invalidDate (showDate . runFD) $ _fromDate localState))
+            elClass "p" "toDate" (text (maybe invalidDate (showDate . runTD) $ _toDate localState))
+            elClass "table" "logtable" $ buildTable localState
+        x -> elClass "p" "statusMessage" (text . showStatus $ x)
+
+buildTable :: (MonadWidget t m ) => State -> m ()
+buildTable localState = do
+    elClass "thead" "loghead" $
+        el "tr" $ do
+            el "th" $ text "Timestamp (UTC)"
+            el "th" $ text "Nickname"
+            el "th" $ text "Message"
+    elClass "tbody" "logbody" $ mapM_ (toRow (_dateFilter localState)) logRows
+    where logRows = case _order localState of
+              Normal -> fromMaybe [] (_messages localState)
+              Reversed -> reverse $ fromMaybe [] (_messages localState)
 
 showLoadedStatus :: State -> T.Text
 showLoadedStatus localState =
@@ -105,17 +105,15 @@ showLoadedStatus localState =
     <> (T.pack . show . length) (fromMaybe [] (_messages localState))
     <> " messages"
 
-toRow :: Filter -> PrivMsg -> Html ()
-toRow (OnlyToday today) msg = if isToday today msg
-    then buildRow msg
-    else mempty
+toRow :: (MonadWidget t m) => Filter -> PrivMsg -> m ()
+toRow (OnlyToday today) msg = when (isToday today msg) (buildRow msg)
 toRow _ msg = buildRow msg
 
-buildRow :: PrivMsg -> Html ()
-buildRow msg = tr_ [class_ "logrow"] $ do
-    td_ (toHtml . showDate $ timestamp msg)
-    td_ (toHtml $ nickname msg)
-    td_ (toHtml $ message msg)
+buildRow :: (MonadWidget t m) => PrivMsg -> m ()
+buildRow msg = elClass "tr" "logrow" $ do
+    el "td" (text . showDate $ timestamp msg)
+    el "td" (text $ nickname msg)
+    el "td" (text $ message msg)
 
 showDate :: UTCTime -> T.Text
 showDate = T.pack . formatTime defaultTimeLocale "%F %T"
@@ -151,9 +149,6 @@ updateStateResponse (LogResponse stat fromD toD mess) oldState = case stat of
                   & Types.fromDate .~ Nothing
                   & Types.toDate   .~ Nothing
                   & Types.httpStatus .~ x
-
-filterToday :: UTCTime -> Maybe [PrivMsg] -> Maybe [PrivMsg]
-filterToday today = fmap (filter (isToday today))
 
 -- Is the PrivMsg the same day as the utctime?
 isToday :: UTCTime -> PrivMsg -> Bool
