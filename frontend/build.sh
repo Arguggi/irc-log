@@ -7,6 +7,14 @@ COMPILER_FOLDER="$HOME/Downloads/compiler-latest"
 
 stack --stack-yaml stack-ghcjs.yaml build
 
+case "$1" in
+    "copy" ) ACTION="cp ./all.js $OUTPUT_FOLDER/all.min.js";;
+    "dev" ) ACTION="java -jar $COMPILER_FOLDER/compiler.jar --js_output_file $OUTPUT_FOLDER/all.min.js ./all.js";;
+    "production" ) ACTION="java -jar "$COMPILER_FOLDER/compiler.jar" --compilation_level=ADVANCED_OPTIMIZATIONS --js_output_file "$OUTPUT_FOLDER/all.min.js" ./all.js";;
+    *) echo "Invalid action"; exit 1;;
+esac
+
+
 cd "$INPUT_FOLDER" || exit 1
 #for i in ./*.js; do
 #    echo "optimizing $i"
@@ -16,7 +24,8 @@ cd "$INPUT_FOLDER" || exit 1
 #         "$i"
 #done
 
-java -jar "$COMPILER_FOLDER/compiler.jar" \
-     --compilation_level=ADVANCED_OPTIMIZATIONS \
-     --js_output_file "$OUTPUT_FOLDER/all.min.js" \
-     ./all.js
+$ACTION
+#java -jar "$COMPILER_FOLDER/compiler.jar" \
+#     --compilation_level=ADVANCED_OPTIMIZATIONS \
+#     --js_output_file "$OUTPUT_FOLDER/all.min.js" \
+#     ./all.js
