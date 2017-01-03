@@ -6,7 +6,7 @@ a database called `irc`. You can find a dump in `backend/db/`
 ## Build
 
     $ git clone https://github.com/Arguggi/irc-log.git
-    $ cd irc-log/backend
+    $ cd irc-log
     $ stack build
 
 Once if finishes you should find 2 executables in `.stack-work`:

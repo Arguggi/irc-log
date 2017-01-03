@@ -10,9 +10,8 @@ setup-info:
            sha1: 0d2ebe0931b29adca7cb9d9b9f77d60095bfb864
 
 packages:
-- location: '.'
-- location:  '../lib'
-  extra-dep: true
+- location: 'lib'
+- location: 'frontend'
 - location:
     git: https://github.com/reflex-frp/reflex.git
     commit: a63aba90bdea5ae5b3e1506d468613bdfedcdfa3
