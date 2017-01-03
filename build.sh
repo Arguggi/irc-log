@@ -14,21 +14,10 @@ case "$1" in
     "copy" ) ACTION="cp ./all.js $OUTPUT_FOLDER/all.min.js";;
     "dev" ) ACTION="java -jar $COMPILER_FOLDER/compiler.jar --js_output_file $OUTPUT_FOLDER/all.min.js ./all.js";;
     "production" ) ACTION="java -jar "$COMPILER_FOLDER/compiler.jar" --compilation_level=ADVANCED_OPTIMIZATIONS --js_output_file "$OUTPUT_FOLDER/all.min.js" ./all.js";;
-    *) echo "Invalid action"; exit 1;;
+    *) printf "Invalid action. \nValid actions: copy, dev (no advanced optimizations), production (advanced optimizations)"; exit 1;;
 esac
 
 
-cd "$INPUT_FOLDER" || exit 1
-#for i in ./*.js; do
-#    echo "optimizing $i"
-#    # Advanced optimizations break it :/
-#    java -jar "$COMPILER_FOLDER/compiler.jar" \
-#         --js_output_file "$OUTPUT_FOLDER/$i" \
-#         "$i"
-#done
+cd "$INPUT_FOLDER" || exit
 
 $ACTION
-#java -jar "$COMPILER_FOLDER/compiler.jar" \
-#     --compilation_level=ADVANCED_OPTIMIZATIONS \
-#     --js_output_file "$OUTPUT_FOLDER/all.min.js" \
-#     ./all.js
