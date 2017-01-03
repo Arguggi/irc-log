@@ -8,6 +8,7 @@ a database called `irc`. You can find a dump in `backend/db/`
     $ git clone https://github.com/Arguggi/irc-log.git
     $ cd irc-log
     $ stack build
+    # If stack complains about missing ghc you have to run stack setup first.
 
 Once if finishes you should find 2 executables in `.stack-work`:
 
