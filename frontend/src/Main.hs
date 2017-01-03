@@ -4,6 +4,7 @@
 module Main where
 
 import Data.Maybe
+import Data.Map.Lazy (singleton)
 import Data.Monoid
 import qualified Data.Text as T
 import Control.Monad.IO.Class
@@ -122,7 +123,9 @@ toRow _ msg = buildRow msg
 buildRow :: (MonadWidget t m) => PrivMsg -> m ()
 buildRow msg = elClass "tr" "logrow" $ do
     el "td" (text . showDate $ timestamp msg)
-    el "td" (text $ nickname msg)
+    let nickMD5 = md5string $ nickname msg --TODO import md5 from somewhere
+    let nickColor = "#" ++ take 6 nickMD5
+    elAttr "td" (singleton "style" ("color: " ++ nickColor)) (text $ nickname msg)
     el "td" (text $ message msg)
 
 showDate :: UTCTime -> T.Text
