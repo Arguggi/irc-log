@@ -1,11 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
+import Crypto.Hash (hash, MD5)
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 import Control.Monad.IO.Class
 import Control.Monad (when)
 import Reflex.Dom hiding ((.~))
@@ -122,7 +125,9 @@ toRow _ msg = buildRow msg
 buildRow :: (MonadWidget t m) => PrivMsg -> m ()
 buildRow msg = elClass "tr" "logrow" $ do
     el "td" (text . showDate $ timestamp msg)
-    el "td" (text $ nickname msg)
+    let md5Hash :: MD5 = hash . encodeUtf8 . nickname $ msg
+    let nickColor = "#" <> T.take 6 (T.pack . show $ md5Hash)
+    elAttr "td" ("style" =: ("color: " <> nickColor)) (text $ nickname msg)
     el "td" (text $ message msg)
 
 showDate :: UTCTime -> T.Text

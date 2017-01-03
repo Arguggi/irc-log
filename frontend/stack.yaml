@@ -24,3 +24,4 @@ extra-deps:
 - zenc-0.1.1
 - webkitgtk3-javascriptcore-0.13.2.0
 - MemoTrie-0.6.7
+- hashing-0.1.0.1

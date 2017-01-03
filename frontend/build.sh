@@ -2,7 +2,7 @@
 
 FRONTEND_FOLDER="$HOME/projects/irc-log/frontend"
 OUTPUT_FOLDER="$FRONTEND_FOLDER/output"
-INPUT_FOLDER="$FRONTEND_FOLDER/.stack-work/dist/x86_64-linux/Cabal-1.24.0.0_ghcjs/build/irc-dom/irc-dom.jsexe"
+INPUT_FOLDER="$FRONTEND_FOLDER/.stack-work/dist/x86_64-linux/Cabal-1.24.2.0_ghcjs/build/irc-dom/irc-dom.jsexe"
 COMPILER_FOLDER="$HOME/Downloads/compiler-latest"
 
 stack --stack-yaml stack-ghcjs.yaml build

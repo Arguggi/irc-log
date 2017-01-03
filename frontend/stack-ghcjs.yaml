@@ -26,3 +26,4 @@ extra-deps:
 - ghcjs-dom-0.2.4.0
 - ref-tf-0.4.0.1
 - zenc-0.1.1
+- hashing-0.1.0.1

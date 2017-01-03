@@ -14,6 +14,7 @@ executable irc-dom
   other-modules:       Types
   build-depends:       base >=4.9 && <4.10
                      , data-default
+                     , hashing
                      , irc-lib
                      , lens
                      , reflex
